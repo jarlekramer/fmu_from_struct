@@ -2,12 +2,17 @@ pub use fmrs_model::prelude::*;
 
 #[derive(FmrsModel)]
 pub struct Spring {
-    mass: f64,
-    stiffness: f64,
-    damping: f64,
-    position: f64,
-    velocity: f64,
-    acceleration: f64,
+    #[parameter]
+    pub mass: f64,
+    pub stiffness: f64,
+    pub damping: f64,
+    #[output]
+    pub position: f64,
+    pub velocity: f64,
+    pub acceleration: f64,
+
+    private_float: f64,
+    private_bool: bool,
 }
 
 impl Spring {

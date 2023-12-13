@@ -1,42 +1,49 @@
 use proc_macro::TokenStream;
+use proc_macro2::TokenStream as TokenStream2;
+
 use quote::quote;
 use syn;
 
-#[proc_macro_derive(FmrsModel)]
+mod model_description;
+mod field_information;
+
+use field_information::FieldInformation;
+
+#[proc_macro_derive(FmrsModel, attributes(parameter, input, output))]
 pub fn fmrs_model_derive(input: TokenStream) -> TokenStream { 
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
 
-    impl_fmrs_model(&input)
+    let name = &input.ident;
+    let name_string = name.to_string();
+
+    let fields = FieldInformation::parse_fields(&input);
+
+    let _write_res = model_description::generate_model_description(&name_string, &fields);
+
+    let get_tokens = impl_get_functions(name, &fields);
+    let div_tokens = impl_fmrs_model(&input);
+
+    quote! {
+        #get_tokens
+        #div_tokens
+    }.into()
 }
 
-fn impl_fmrs_model(input: &syn::DeriveInput) -> TokenStream {
-    let name = &input.ident;
+fn impl_get_functions(name: &syn::Ident, fields: &Vec<FieldInformation>) -> TokenStream2 {
+    let field_names = fields.iter().map(|field| &field.name);
     
-    let data: &syn::Data = &input.data;
-
-    let tokens = match *data {
-        syn::Data::Struct(ref data) => {
-            match data.fields {
-                syn::Fields::Named(ref fields) => {
-                    println!("Found named fields");
-
-                    let field_names = fields.named.iter().map(|f| {&f.ident});
-
-                    quote!{
-                        impl #name {
-                            pub fn new() -> Self {
-                                Self {
-                                    #(#field_names: 0.0),*
-                                }
-                            }
-                        }
-                    }
-                },
-                syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!(),
-            }
-        },
-        syn::Data::Enum(_) | syn::Data::Union(_) =>  unimplemented!(),
+    let tokens = quote! {
+        pub fn hello_world() {
+            println!("Hello!")
+        }
     };
 
-    tokens.into()
+    tokens
+}
+
+
+fn impl_fmrs_model(input: &syn::DeriveInput) -> TokenStream2 {
+    let tokens = quote!();
+
+    tokens
 }
