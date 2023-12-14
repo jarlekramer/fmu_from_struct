@@ -25,18 +25,6 @@ pub extern "C" fn fmi3SetFloat32(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3SetFloat64(
-    _instance: fmi3Instance,
-    _valueReferences: *const fmi3ValueReference,
-    _nValueReferences: usize,
-    _values: *const f64,
-    _nValues: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub extern "C" fn fmi3SetInt8(
     _instance: fmi3Instance,
     _valueReferences: *const fmi3ValueReference,

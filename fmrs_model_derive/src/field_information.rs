@@ -123,5 +123,13 @@ impl FieldInformation {
             _ => unimplemented!(),
         }
     }
+
+    pub fn default_start_value_string(&self) -> String {
+        match self.field_type.to_string().as_str() {
+            "f64" => "0.0".to_string(),
+            "bool" => "false".to_string(),
+            _ => unimplemented!(),
+        }
+    }
     
 }

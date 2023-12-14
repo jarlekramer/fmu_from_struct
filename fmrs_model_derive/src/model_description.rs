@@ -40,12 +40,13 @@ pub fn generate_model_description(name: &str, fields: &Vec<FieldInformation>) ->
     for field in fields {
         write!(
             file, 
-            "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\"/>\n", 
+            "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\" initial=\"exact\" start=\"{}\"/>\n", 
             field.model_description_type(), 
             field.name,
             field.value_reference,
             field.causality.as_string(),
             field.causality.variability_string(),
+            field.default_start_value_string(),
         )?;
     }
 

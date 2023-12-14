@@ -1,25 +1,31 @@
 pub use fmrs_model::prelude::*;
 
-#[derive(FmrsModel)]
+#[derive(FmrsModel, Debug, Default)]
 pub struct Spring {
-    #[parameter]
+    #[parameter] // Every variable below this attribute will be a parameter.
     pub mass: f64,
     pub stiffness: f64,
     pub damping: f64,
-    #[output]
+    #[output] // Every variable below this attribute will be an output variable. Input is also possible but not used here.
     pub position: f64,
     pub velocity: f64,
     pub acceleration: f64,
 
-    private_float: f64,
-    private_bool: bool,
+    private_test_variable: bool, // Private variables do not get an FMI-interface, but can be used internally in the model if needed.
 }
 
 impl Spring {
-    pub fn do_step(&mut self, step_size: f64) {
+    /// Currently the only mandatory function. Should probably be a trait in the future...
+    pub fn do_step(&mut self, _current_time: f64, time_step: f64) {
         let force = -self.stiffness * self.position - self.damping * self.velocity;
-        self.acceleration = force / self.mass;
-        self.velocity += self.acceleration * step_size;
-        self.position += self.velocity * step_size;
+
+        self.acceleration = if self.mass != 0.0 {
+            force / self.mass
+        } else {
+            0.0
+        };
+
+        self.velocity += self.acceleration * time_step;
+        self.position += self.velocity * time_step;
     }
 }

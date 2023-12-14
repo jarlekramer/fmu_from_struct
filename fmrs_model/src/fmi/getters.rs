@@ -14,18 +14,6 @@ pub extern "C" fn fmi3GetFloat32(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3GetFloat64(
-    _instance: fmi3Instance,
-    _valueReferences: *const fmi3ValueReference,
-    _nValueReferences: usize,
-    _values: *mut f64,
-    _nValues: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub extern "C" fn fmi3GetInt8(
     _instance: fmi3Instance,
     _valueReferences: *const fmi3ValueReference,

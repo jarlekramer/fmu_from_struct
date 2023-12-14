@@ -18,25 +18,6 @@ pub extern "C" fn fmi3InstantiateModelExchange(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3InstantiateCoSimulation(
-    _instanceName: fmi3String,
-    _instantiationToken: fmi3String,
-    _resourcePath: fmi3String,
-    _visible: bool,
-    _loggingOn: bool,
-    _eventModeUsed: bool,
-    _earlyReturnAllowed: bool,
-    _requiredIntermediateVariables: *const fmi3ValueReference,
-    _nRequiredIntermediateVariables: usize,
-    _instanceEnvironment: fmi3InstanceEnvironment,
-    _logMessage: fmi3LogMessageCallback,
-    _intermediateUpdate: fmi3IntermediateUpdateCallback,
-) -> fmi3Instance {
-    std::ptr::null_mut()
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub extern "C" fn fmi3InstantiateScheduledExecution(
     _instanceName: fmi3String,
     _instantiationToken: fmi3String,
@@ -50,16 +31,6 @@ pub extern "C" fn fmi3InstantiateScheduledExecution(
     _unlockPreemption: fmi3UnlockPreemptionCallback,
 ) -> fmi3Instance {
     std::ptr::null_mut()
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn fmi3FreeInstance(instance: fmi3Instance) {
-    if instance == std::ptr::null_mut() {
-        return;
-    }
-
-    libc::free(instance as *mut libc::c_void);
 }
 
 #[no_mangle]

@@ -1,15 +1,15 @@
 use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
 
 use quote::quote;
 use syn;
 
 mod model_description;
 mod field_information;
+mod model_management;
+mod get_and_set;
+mod do_step;
 
 use field_information::FieldInformation;
-
-use fmi_types::*;
 
 #[proc_macro_derive(FmrsModel, attributes(parameter, input, output))]
 pub fn fmrs_model_derive(input: TokenStream) -> TokenStream { 
@@ -22,60 +22,17 @@ pub fn fmrs_model_derive(input: TokenStream) -> TokenStream {
 
     let _write_res = model_description::generate_model_description(&name_string, &fields);
 
-    let get_tokens = impl_get_functions(name, &fields);
-    let div_tokens = impl_fmrs_model(&input);
+    let managment_tokens = model_management::impl_model_managment(name);
 
-    dbg!(get_tokens.to_string());
+    let get_tokens = get_and_set::impl_get_functions(name, &fields);
+    let set_tokens = get_and_set::impl_set_functions(name, &fields);
+
+    let do_step_tokens = do_step::impl_do_step(name);
 
     quote! {
+        #managment_tokens
         #get_tokens
-        #div_tokens
+        #set_tokens
+        #do_step_tokens
     }.into()
-}
-
-fn impl_get_functions(name: &syn::Ident, fields: &Vec<FieldInformation>) -> TokenStream2 {
-    let field_names      = fields.iter().map(|field| &field.name);
-    let value_references = fields.iter().map(|field| field.value_reference);
-    
-    let tokens = quote! {
-        pub extern "C" fn fmi3GetFloat64(
-            instance: fmi3Instance,
-            valueReferences: *const fmi3ValueReference,
-            _nValueReferences: usize,
-            values: *mut f64,
-            nValues: usize,
-        ) -> fmi3Status {
-            let ptr = instance as *mut #name;
-        
-            unsafe {
-                let model: &mut #name = &mut *ptr;
-
-                for i in 0..nValues {
-                    let input_value_reference = valueReferences.offset(i as isize) as usize;
-
-                    match input_value_reference {
-                        #(
-                            #value_references => {
-                                let value = &model.#field_names;
-                                *values.offset(i as isize) = *value;
-                            }
-                        )*
-                        _ => {}
-                    }
-                }
-
-            }
-            
-            fmi3Status::fmi3OK
-        }
-    };
-
-    tokens
-}
-
-
-fn impl_fmrs_model(input: &syn::DeriveInput) -> TokenStream2 {
-    let tokens = quote!();
-
-    tokens
 }

@@ -21,22 +21,6 @@ pub extern "C" fn fmi3GetOutputDerivatives(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3DoStep(
-    _instance: fmi3Instance,
-    _currentCommunicationPoint: f64,
-    _communicationStepSize: f64,
-    _noSetFMUStatePriorToCurrentPoint: bool,
-    _eventHandlingNeeded: *mut bool,
-    _terminateSimulation: *mut bool,
-    _earlyReturn: *mut bool,
-    _lastSuccessfulTime: *mut f64,
-) -> fmi3Status {
-    
-    fmi3Status::fmi3OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub extern "C" fn fmi3ActivateModelPartition(
     _instance: fmi3Instance,
     _clockReference: fmi3ValueReference,
