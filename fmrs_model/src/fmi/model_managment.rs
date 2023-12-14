@@ -1,4 +1,4 @@
-use super::custom_types::*;
+use fmi_types::*;
 
 use libc;
 

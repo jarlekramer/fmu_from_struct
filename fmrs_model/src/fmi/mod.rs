@@ -2,7 +2,6 @@
 //! Rust implementation of the functions in the FMI3 standard that assumes the custom model in this
 //! crate is used to handle the model logic.
 
-pub mod custom_types;
 pub mod co_simulation;
 pub mod model_exchange;
 pub mod setters;
@@ -11,7 +10,7 @@ pub mod model_managment;
 pub mod serialize;
 pub mod discrete_state;
 
-use custom_types::*;
+use fmi_types::*;
 
 #[no_mangle]
 #[allow(non_snake_case)]

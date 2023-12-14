@@ -11,3 +11,4 @@ quote = "1.0.33"
 syn = { version = "2.0.40", features = ["extra-traits"] }
 uuid = { version = "1.6.1", features = ["v4"] }
 proc-macro2 = "1.0"
+fmi_types = { path = "../fmi_types" }

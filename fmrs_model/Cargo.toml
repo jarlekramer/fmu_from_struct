@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 libc = "0.2.151"
 fmrs_model_derive = { path = "../fmrs_model_derive" }
+fmi_types = { path = "../fmi_types" }

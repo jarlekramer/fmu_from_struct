@@ -1,5 +1,5 @@
 
-use super::custom_types::*;
+use fmi_types::*;
 
 #[no_mangle]
 #[allow(non_snake_case)]
