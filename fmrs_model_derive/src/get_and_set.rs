@@ -15,16 +15,16 @@ pub fn impl_get_functions(name: &syn::Ident, fields: &Vec<FieldInformation>) -> 
         pub extern "C" fn fmi3GetFloat64(
             instance: fmi3Instance,
             valueReferences: *const fmi3ValueReference,
-            _nValueReferences: usize,
+            nValueReferences: usize,
             values: *mut f64,
-            nValues: usize,
+            _nValues: usize,
         ) -> fmi3Status {
             let ptr = instance as *mut #name;
         
             unsafe {
                 let model: &mut #name = &mut *ptr;
 
-                for i in 0..nValues {
+                for i in 0..nValueReferences {
                     let input_value_reference = *valueReferences.offset(i as isize) as usize;
 
                     match input_value_reference {
@@ -56,16 +56,16 @@ pub fn impl_set_functions(name: &syn::Ident, fields: &Vec<FieldInformation>) -> 
         pub extern "C" fn fmi3SetFloat64(
             instance: fmi3Instance,
             valueReferences: *const fmi3ValueReference,
-            _nValueReferences: usize,
+            nValueReferences: usize,
             values: *const f64,
-            nValues: usize,
+            _nValues: usize,
         ) -> fmi3Status {
             let ptr = instance as *mut #name;
         
             unsafe {
                 let model: &mut #name = &mut *ptr;
 
-                for i in 0..nValues {
+                for i in 0..nValueReferences {
                     let input_value_reference = *valueReferences.offset(i as isize) as usize;
 
                     match input_value_reference {
