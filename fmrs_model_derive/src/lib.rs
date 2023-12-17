@@ -11,9 +11,16 @@ mod do_step;
 
 use field_information::FieldInformation;
 
+enum FmiVersion {
+    Fmi2,
+    Fmi3,
+}
+
 #[proc_macro_derive(FmrsModel, attributes(fmi_version, parameter, input, output))]
 pub fn fmrs_model_derive(input: TokenStream) -> TokenStream { 
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
+
+    let fmi_version = parse_fmi_version(&input);
 
     let name = &input.ident;
     let name_string = name.to_string();
@@ -37,18 +44,24 @@ pub fn fmrs_model_derive(input: TokenStream) -> TokenStream {
     }.into()
 }
 
-pub fn parse_fmi_version(input: &syn::DeriveInput) -> Option<usize> {
-    for attr in &input.attrs {
-        if let Ok(syn::Meta::NameValue(meta_name_value)) = attr.parse_meta() {
-            if meta_name_value.path.is_ident("fmi_version") {
-                if let syn::Lit::Str(lit_str) = meta_name_value.lit {
-                    if let Ok(version) = lit_str.value().parse::<usize>() {
-                        return Some(version);
-                    }
-                }
-            }
-        }
-    }
+fn parse_fmi_version(input: &syn::DeriveInput) -> FmiVersion {
+    if input.attrs.len() == 0 {
+        FmiVersion::Fmi3
+    } else {
+        let attributes = &input.attrs;
 
-    None
+        for attribute in attributes {
+            let meta = &attribute.meta;
+
+            match meta {
+                syn::Meta::NameValue(data) => {
+                    dbg!(&data.value);
+                },
+                _ => {}
+            }
+
+        }
+
+        FmiVersion::Fmi3
+    }
 }
