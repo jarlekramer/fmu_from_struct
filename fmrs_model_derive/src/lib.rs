@@ -11,7 +11,7 @@ mod do_step;
 
 use field_information::FieldInformation;
 
-#[proc_macro_derive(FmrsModel, attributes(parameter, input, output))]
+#[proc_macro_derive(FmrsModel, attributes(fmi_version, parameter, input, output))]
 pub fn fmrs_model_derive(input: TokenStream) -> TokenStream { 
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
 
@@ -35,4 +35,20 @@ pub fn fmrs_model_derive(input: TokenStream) -> TokenStream {
         #set_tokens
         #do_step_tokens
     }.into()
+}
+
+pub fn parse_fmi_version(input: &syn::DeriveInput) -> Option<usize> {
+    for attr in &input.attrs {
+        if let Ok(syn::Meta::NameValue(meta_name_value)) = attr.parse_meta() {
+            if meta_name_value.path.is_ident("fmi_version") {
+                if let syn::Lit::Str(lit_str) = meta_name_value.lit {
+                    if let Ok(version) = lit_str.value().parse::<usize>() {
+                        return Some(version);
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }

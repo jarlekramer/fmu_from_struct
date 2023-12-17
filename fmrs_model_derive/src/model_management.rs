@@ -8,30 +8,30 @@ pub fn impl_model_managment(model_name: &syn::Ident) -> TokenStream2 {
         #[no_mangle]
         #[allow(non_snake_case)]
         pub extern "C" fn fmi3InstantiateCoSimulation(
-            _instanceName: fmi3String,
-            _instantiationToken: fmi3String,
-            _resourcePath: fmi3String,
+            _instance_name: fmi3String,
+            _instantiation_token: fmi3String,
+            _resource_path: fmi3String,
             _visible: bool,
-            _loggingOn: bool,
-            _eventModeUsed: bool,
-            _earlyReturnAllowed: bool,
-            _requiredIntermediateVariables: *const fmi3ValueReference,
-            _nRequiredIntermediateVariables: usize,
-            _instanceEnvironment: fmi3InstanceEnvironment,
-            _logMessage: fmi3LogMessageCallback,
-            _intermediateUpdate: fmi3IntermediateUpdateCallback,
-        ) -> fmi3Instance {
+            _logging_on: bool,
+            _event_mode_used: bool,
+            _early_return_allowed: bool,
+            _required_intermediate_variables: *const u32,
+            _n_required_intermediate_variables: usize,
+            _instance_environment: fmi3InstanceEnvironment,
+            _log_message: fmi3LogMessageCallback,
+            _intermediate_update: fmi3IntermediateUpdateCallback,
+        ) -> *mut ffi::c_void {
             // The box is needed to avoid the model to be dropped when it goes out of scope.
             let mut model = Box::new(#model_name::default());
 
             let ptr = Box::into_raw(model) as *mut _;
 
-            ptr as fmi3Instance
+            ptr as *mut ffi::c_void
         }
 
         #[no_mangle]
         #[allow(non_snake_case)]
-        pub unsafe extern "C" fn fmi3FreeInstance(instance: fmi3Instance) {
+        pub unsafe extern "C" fn fmi3FreeInstance(instance: *mut ffi::c_void) {
             if !instance.is_null() {
                 let instance = instance as *mut #model_name;
 
