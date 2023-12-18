@@ -4,26 +4,10 @@
 //! 
 //! Note: the fmi types that are directly tranlasted to a standard type, e.g. fmi3Float32, are not
 //! defined here, as it deemed unnecessary. 
-//! 
-//! However, some types where the underlying priomitive type is uncelar, such as fmi3ValueReference, 
-//! are defined to increase readability.
 
 use std::ffi;
 
-// -------------------------- Custom names for void pointers ---------------------------------------
-#[allow(non_camel_case_types)]
-pub type fmi3Instance = *mut ffi::c_void;
-
-#[allow(non_camel_case_types)]
-pub type fmi3InstanceEnvironment = *mut ffi::c_void;
-
-#[allow(non_camel_case_types)]
-pub type fmi3FMUState = *mut ffi::c_void;
-
 // ------------------------- Custom names for primitive types --------------------------------------
-#[allow(non_camel_case_types)]
-pub type fmi3ValueReference = u32;
-
 #[allow(non_camel_case_types)]
 pub type fmi3String = *const ffi::c_char;
 
@@ -66,7 +50,7 @@ pub enum fmi3IntervalQualifier {
 // ------------------- Custom function pointers ----------------------------------------------------
 #[allow(non_camel_case_types)]
 pub type fmi3LogMessageCallback = extern "C" fn(
-    instanceEnvironment: fmi3InstanceEnvironment,
+    instance_environment: *mut ffi::c_void,
     status: fmi3Status,
     category: fmi3String,
     message: fmi3String,
@@ -74,19 +58,19 @@ pub type fmi3LogMessageCallback = extern "C" fn(
 
 #[allow(non_camel_case_types)]
 pub type fmi3ClockUpdateCallback = extern "C" fn(
-    instanceEnvironment: fmi3InstanceEnvironment,
+    instance_environment: *mut ffi::c_void,
 );
 
 #[allow(non_camel_case_types)]
 pub type fmi3IntermediateUpdateCallback = extern "C" fn(
-    instanceEnvironment: fmi3InstanceEnvironment,
-    intermediateUpdateTime: f64,
-    intermediateVariableSetRequested: bool,
-    intermediateVariableGetAllowed: bool,
-    intermediateStepFinished: bool,
-    canReturnEarly: bool,
-    earlyReturnRequested: *mut bool,
-    earlyReturnTime: *mut f64,
+    instance_environment: *mut ffi::c_void,
+    intermediate_update_time: f64,
+    intermediate_variable_set_requested: bool,
+    intermediate_variable_get_allowed: bool,
+    intermediate_step_finished: bool,
+    can_return_early: bool,
+    early_return_requested: *mut bool,
+    early_return_time: *mut f64,
 );
 
 #[allow(non_camel_case_types)]
