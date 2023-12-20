@@ -1,13 +1,12 @@
 pub use fmrs_model::prelude::*;
 
 #[derive(FmrsModel, Debug, Default)]
-#[fmi_version = 2]
+#[fmi_version = 3]
 pub struct Spring {
     #[parameter] // Every variable below this attribute will be a parameter.
     pub mass: f64,
     pub stiffness: f64,
     pub damping: f64,
-    pub variables_test: i32,
     #[output] // Every variable below this attribute will be an output variable. Input is also possible but not used here.
     pub position: f64,
     pub velocity: f64,
