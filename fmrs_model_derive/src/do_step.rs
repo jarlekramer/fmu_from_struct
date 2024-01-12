@@ -33,6 +33,11 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
         },
     };
 
+    let return_value = match fmi_version {
+        FmiVersion::Fmi2 => quote! { fmi2Status::fmi2OK },
+        FmiVersion::Fmi3 => quote! { fmi3Status::fmi3OK },
+    };
+
     let tokens = quote! {
         #function_signature {
             unsafe {
@@ -41,7 +46,7 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
                 model.do_step(current_communication_point, communication_step_size);
             }
             
-            fmi3Status::fmi3OK
+            #return_value
         }
     
     };
