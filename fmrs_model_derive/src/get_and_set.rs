@@ -7,8 +7,9 @@ use syn;
 use super::field_information::FieldInformation;
 use super::fmi_version::FmiVersion;
 
-pub fn impl_get_and_set_functions(fmi_version: FmiVersion, name: &syn::Ident, fields: &[FieldInformation]) -> TokenStream2 {
+fn get_rust_types(fmi_version: FmiVersion) -> Vec<syn::Ident> {
     let mut rust_types: Vec<syn::Ident> = Vec::new();
+
     rust_types.push(syn::Ident::new("f64",  proc_macro2::Span::call_site()));
     rust_types.push(syn::Ident::new("bool", proc_macro2::Span::call_site()));
     rust_types.push(syn::Ident::new("i32",  proc_macro2::Span::call_site()));
@@ -24,17 +25,35 @@ pub fn impl_get_and_set_functions(fmi_version: FmiVersion, name: &syn::Ident, fi
         rust_types.push(syn::Ident::new("u64", proc_macro2::Span::call_site()));
     }
 
-    let mut get_functions: Vec<TokenStream2> = Vec::new();
-    let mut set_functions: Vec<TokenStream2> = Vec::new();
+    rust_types
+}
+
+pub fn impl_get_functions(fmi_version: FmiVersion, name: &syn::Ident, fields: &[FieldInformation]) -> TokenStream2 {
+    let rust_types = get_rust_types(fmi_version);
+
+    let mut functions: Vec<TokenStream2> = Vec::new();
+
 
     for t in rust_types {
-        get_functions.push(impl_get_function(fmi_version, name, fields, &t));
-        set_functions.push(impl_set_function(fmi_version, name, fields, &t));
+        functions.push(impl_get_function(fmi_version, name, fields, &t));
     }
 
     quote! {
-        #(#get_functions)*
-        #(#set_functions)*
+        #(#functions)*
+    }
+}
+
+pub fn impl_set_functions(fmi_version: FmiVersion, name: &syn::Ident, fields: &[FieldInformation]) -> TokenStream2 {
+    let rust_types = get_rust_types(fmi_version);
+
+    let mut functions: Vec<TokenStream2> = Vec::new();
+
+    for t in rust_types {
+        functions.push(impl_set_function(fmi_version, name, fields, &t));
+    }
+
+    quote! {
+        #(#functions)*
     }
 }
 
@@ -50,8 +69,6 @@ fn impl_get_function(
         FieldInformation::get_fmi_type_name(fmi_version, field_type)
     );
 
-    let status_name = quote::format_ident!("{}Status", fmi_version.to_function_string());
-
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => quote! {
             #[no_mangle]
@@ -61,7 +78,7 @@ fn impl_get_function(
                 value_references: *const u32,
                 n_value_references: usize,
                 values: *mut #field_type,
-            ) -> #status_name
+            ) -> fmi2Status
         },
         FmiVersion::Fmi3 => quote! {
             #[no_mangle]
@@ -72,7 +89,7 @@ fn impl_get_function(
                 n_value_references: usize,
                 values: *mut #field_type,
                 _n_values: usize,
-            ) -> #status_name
+            ) -> fmi3Status
         },
     };
 
@@ -143,37 +160,45 @@ fn impl_set_function(
         fmi_version.to_function_string(), 
         FieldInformation::get_fmi_type_name(fmi_version, field_type)
     );
-    
-    let status_name = quote::format_ident!("{}Status", fmi_version.to_function_string());
 
-    let function_signature = quote! {
-        #[no_mangle]
-        #[allow(non_snake_case)]
-        pub extern "C" fn #function_name(
-            instance: *mut ffi::c_void,
-            value_references: *const u32,
-            n_value_references: usize,
-            values: *mut #field_type,
-            _n_values: usize,
-        ) -> #status_name
+    let function_signature = match fmi_version {
+        FmiVersion::Fmi2 => quote! {
+            #[no_mangle]
+            #[allow(non_snake_case)]
+            pub extern "C" fn #function_name(
+                instance: *mut ffi::c_void,
+                value_references: *const u32,
+                n_value_references: usize,
+                values: *mut #field_type,
+            ) -> fmi2Status
+        },
+        FmiVersion::Fmi3 => quote! {
+            #[no_mangle]
+            #[allow(non_snake_case)]
+            pub extern "C" fn #function_name(
+                instance: *mut ffi::c_void,
+                value_references: *const u32,
+                n_value_references: usize,
+                values: *mut #field_type,
+                _n_values: usize,
+            ) -> fmi3Status
+        },
     };
 
     let filtered_fields = FieldInformation::filter_on_type(all_fields, field_type);
 
     if filtered_fields.is_empty() {
-        quote! {
-            match fmi_version {
-                FmiVersion::Fmi2 => quote! {
-                    #function_signature {
-                        fmi2Status::fmi2Error
-                    }
-                },
-                FmiVersion::Fmi3 => quote! {
-                    #function_signature {
-                        fmi3Status::fmi3Error
-                    }
-                },
-            }
+        match fmi_version {
+            FmiVersion::Fmi2 => quote! {
+                #function_signature {
+                    fmi2Status::fmi2Error
+                }
+            },
+            FmiVersion::Fmi3 => quote! {
+                #function_signature {
+                    fmi3Status::fmi3Error
+                }
+            },
         }
     } else {
         let field_names            = filtered_fields.iter().map(|field| &field.name);
@@ -189,15 +214,7 @@ fn impl_set_function(
         };
         
         quote! {
-            #[no_mangle]
-            #[allow(non_snake_case)]
-            pub extern "C" fn #function_name(
-                instance: *mut ffi::c_void,
-                value_references: *const u32,
-                n_value_references: usize,
-                values: *const #field_type,
-                _n_values: usize,
-            ) -> #status_name {
+            #function_signature {
                 let ptr = instance as *mut #name;
             
                 unsafe {
