@@ -1,3 +1,8 @@
+//! Example of to model a spring when the model is implemented directly together with the fmi struct.
+//! 
+//! See the spring_interface example for the same physics, but where the model is in a separate 
+//! structure.
+
 pub use fmrs_model::prelude::*;
 
 #[derive(FmrsModel, Debug, Default)]

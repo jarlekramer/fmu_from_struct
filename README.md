@@ -12,3 +12,11 @@ Only version 2 and 3 of the fmi standard is supported, with no plans to add supp
 Version 2 is needed as version 3 is yet to be widely used. For instance, the [open simulation 
 platform](https://opensimulationplatform.com/) is still based on version 2. Version 3 is expected to
 be adopted more and more in the near future. 
+
+## Folder structure
+- "fmrs_model" contains the overal interface to the rust functionality. That is, traits and 
+prelude imports.
+- "fmrs_model_derive" contain the actual derive macro
+- "examples" contain simple examples of how to use the macro
+- "fmrs_model_build_utils" contain (currently a single) python script(s) to take the result from 
+cargo build and zip it with the right folder/file structure for the fmu standard.
