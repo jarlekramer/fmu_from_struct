@@ -1,4 +1,5 @@
 use crate::fmi_types::fmi3::*;
+use crate::fmi_types::common::*;
 
 use libc;
 use std::ffi;
@@ -6,17 +7,17 @@ use std::ffi;
 // ------------------------------- Version ---------------------------------------------------------
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3GetVersion() -> fmi3String {
-    "3.0".as_ptr() as fmi3String
+pub extern "C" fn fmi3GetVersion() -> *const ffi::c_char {
+    "3.0".as_ptr() as *const ffi::c_char
 }
 
 // ------------------------------- Model management ------------------------------------------------
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi3InstantiateModelExchange(
-    _instanceName: fmi3String,
-    _instantiationToken: fmi3String,
-    _resourcePath: fmi3String,
+    _instanceName: *const ffi::c_char,
+    _instantiationToken: *const ffi::c_char,
+    _resourcePath: *const ffi::c_char,
     _visible: bool,
     _loggingOn: bool,
     _instanceEnvironment: *mut ffi::c_void,
@@ -28,9 +29,9 @@ pub extern "C" fn fmi3InstantiateModelExchange(
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi3InstantiateScheduledExecution(
-    _instanceName: fmi3String,
-    _instantiationToken: fmi3String,
-    _resourcePath: fmi3String,
+    _instanceName: *const ffi::c_char,
+    _instantiationToken: *const ffi::c_char,
+    _resourcePath: *const ffi::c_char,
     _visible: bool,
     _loggingOn: bool,
     _instanceEnvironment: *mut ffi::c_void,
@@ -44,32 +45,32 @@ pub extern "C" fn fmi3InstantiateScheduledExecution(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3EnterEventMode(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
+pub extern "C" fn fmi3EnterEventMode(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3Terminate(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
+pub extern "C" fn fmi3Terminate(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3Reset(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
+pub extern "C" fn fmi3Reset(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3EnterConfigurationMode(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
+pub extern "C" fn fmi3EnterConfigurationMode(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3ExitConfigurationMode(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
+pub extern "C" fn fmi3ExitConfigurationMode(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -77,9 +78,9 @@ pub extern "C" fn fmi3ExitConfigurationMode(_instance: *mut ffi::c_void) -> fmi3
 pub extern "C" fn fmi3FreeFMUState(
     _instance: *mut ffi::c_void,
     FMUstate: *mut *mut ffi::c_void,
-) -> fmi3Status {
+) -> FmiStatus {
     if FMUstate == std::ptr::null_mut() {
-        return fmi3Status::fmi3Error;
+        return FmiStatus::Error;
     }
 
     unsafe {
@@ -88,15 +89,15 @@ pub extern "C" fn fmi3FreeFMUState(
         *FMUstate = std::ptr::null_mut();
     }
 
-    fmi3Status::fmi3OK
+    FmiStatus::Ok
 }
 
 
 // ------------------------------- Co-simulation ---------------------------------------------------
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3EnterStepMode(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
+pub extern "C" fn fmi3EnterStepMode(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -108,8 +109,8 @@ pub extern "C" fn fmi3GetOutputDerivatives(
     _orders: *const u32,
     _values: *mut f64,
     _nValues: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -118,15 +119,15 @@ pub extern "C" fn fmi3ActivateModelPartition(
     _instance: *mut ffi::c_void,
     _clockReference: u32,
     _activationTime: f64,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 // --------------------------- Model Exchange ------------------------------------------------------
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3EnterContinuousTimeMode(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
+pub extern "C" fn fmi3EnterContinuousTimeMode(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -136,8 +137,8 @@ pub extern "C" fn fmi3CompletedIntegratorStep(
     _noSetFMUStatePriorToCurrentPoint: bool,
     _enterEventMode: *mut bool,
     _terminateSimulation: *mut bool,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -145,8 +146,8 @@ pub extern "C" fn fmi3CompletedIntegratorStep(
 pub extern "C" fn fmi3SetTime(
     _instance: *mut ffi::c_void,
     _time: f64,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -155,8 +156,8 @@ pub extern "C" fn fmi3SetContinuousStates(
     _instance: *mut ffi::c_void,
     _continousStates: *const f64,
     _nContinuousStates: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -165,8 +166,8 @@ pub extern "C" fn fmi3GetContinuousStateDerivatives(
     _instance: *mut ffi::c_void,
     _derivatives: *mut f64,
     _nContinuousStates: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -175,8 +176,8 @@ pub extern "C" fn fmi3GetEventIndicators(
     _instance: *mut ffi::c_void,
     _eventIndicators: *mut f64,
     _nEventIndicators: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -185,8 +186,8 @@ pub extern "C" fn fmi3GetContinuousStates(
     _instance: *mut ffi::c_void,
     _continousStates: *mut f64,
     _nContinuousStates: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -195,8 +196,8 @@ pub extern "C" fn fmi3GetNominalsOfContinuousStates(
     _instance: *mut ffi::c_void,
     _nominals: *mut f64,
     _nContinuousStates: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -204,8 +205,8 @@ pub extern "C" fn fmi3GetNominalsOfContinuousStates(
 pub extern "C" fn fmi3GetNumberOfEventIndicators(
     _instance: *mut ffi::c_void,
     _nEventIndicators: *mut usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -213,8 +214,8 @@ pub extern "C" fn fmi3GetNumberOfEventIndicators(
 pub extern "C" fn fmi3GetNumberOfContinuousStates(
     _instance: *mut ffi::c_void,
     _nContinuousStates: *mut usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 // --------------------------- Serialize -----------------------------------------------------------
@@ -224,8 +225,8 @@ pub extern "C" fn fmi3SerializedFMUStateSize(
     _instance: *mut ffi::c_void,
     _FMUState: *mut ffi::c_void,
     _size: *mut usize
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -235,8 +236,8 @@ pub extern "C" fn fmi3SerializeFMUState(
     _FMUState: *mut ffi::c_void,
     _serializedState: *mut fmi3Byte,
     _size: usize
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -246,8 +247,8 @@ pub extern "C" fn fmi3DeserializeFMUState(
     _serializedState: *const fmi3Byte,
     _size: usize,
     _FMUState: *mut *mut ffi::c_void
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 // --------------------------- Discrete states -----------------------------------------------------
@@ -255,8 +256,8 @@ pub extern "C" fn fmi3DeserializeFMUState(
 #[allow(non_snake_case)]
 pub extern "C" fn fmi3EvaluateDiscreteStates(
     _instance: *mut ffi::c_void,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -269,23 +270,11 @@ pub extern "C" fn fmi3UpdateDiscreteStates(
     _valuesOfContinuousStatesChanged: *mut bool,
     _nextEventTimeDefined: *mut bool,
     _nextEventTime: *mut f64,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 // -------------------------- Set and get ----------------------------------------------------------
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi3GetString(
-    _instance: *mut ffi::c_void,
-    _valueReferences: *const u32,
-    _nValueReferences: usize,
-    _values: *mut fmi3String,
-    _nValues: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
-}
-
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn fmi3GetBinary(
@@ -295,8 +284,8 @@ pub unsafe extern "C" fn fmi3GetBinary(
     _values: *mut fmi3Binary,
     _nValues: usize,
     _sizes: *mut usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -305,8 +294,8 @@ pub unsafe extern "C" fn fmi3GetClock(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
     _values: *mut bool,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -315,8 +304,8 @@ pub extern "C" fn fmi3GetNumberOfVariableDependencies(
     _instance: *mut ffi::c_void,
     _valueReference: u32,
     _nDependencies: *mut usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -329,8 +318,8 @@ pub extern "C" fn fmi3GetVariableDependencies(
     _elementIndicesOfIndependents: *mut usize,
     _dependencyKinds: *mut fmi3DependencyKind,
     _nDependencies: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -338,8 +327,8 @@ pub extern "C" fn fmi3GetVariableDependencies(
 pub extern "C" fn fmi3GetFMUState(
     _instance: *mut ffi::c_void,
     _FMUState: *mut *mut ffi::c_void,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -354,8 +343,8 @@ pub extern "C" fn fmi3GetDirectionalDerivative(
     _nSeed: usize,
     _sensitivity: *mut f64,
     _nSensitivity: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -370,8 +359,8 @@ pub extern "C" fn fmi3GetAdjointDerivative(
     _nSeed: usize,
     _sensitivity: *mut f64,
     _nSensitivity: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -382,8 +371,8 @@ pub extern "C" fn fmi3GetIntervalDecimal(
     _nValueReferences: usize,
     _interval: *mut f64,
     _qualifiers: *mut fmi3IntervalQualifier
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -394,8 +383,8 @@ pub extern "C" fn fmi3GetIntervalFraction(
     _nValueReferences: usize,
     _interval: *mut f64,
     _qualifiers: *mut fmi3IntervalQualifier
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 
@@ -406,8 +395,8 @@ pub extern "C" fn fmi3GetShiftDecimal(
     _valueReferences: *const u32,
     _nValueReferences: usize,
     _shifts: *mut f64,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -418,8 +407,8 @@ pub extern "C" fn fmi3GetShiftFraction(
     _nValueReferences: usize,
     _shiftCounters: *mut u64,
     _resolutions: *mut u64
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -428,21 +417,9 @@ pub extern "C" fn fmi3SetDebugLogging(
     _instance: *mut ffi::c_void,
     _loggingOn: bool,
     _nCategories: usize,
-    _categories: *const fmi3String,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi3SetString(
-    _instance: *mut ffi::c_void,
-    _valueReferences: *const u32,
-    _nValueReferences: usize,
-    _values: *const fmi3String,
-    _nValues: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+    _categories: *const *const ffi::c_char,
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -453,8 +430,8 @@ pub extern "C" fn fmi3SetBinary(
     _nValueReferences: usize,
     _values: *const fmi3Binary,
     _nValues: usize,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -463,8 +440,8 @@ pub extern "C" fn fmi3SetClock(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
     _values: *const bool,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -472,8 +449,8 @@ pub extern "C" fn fmi3SetClock(
 pub extern "C" fn fmi3SetFMUState(
     _instance: *mut ffi::c_void,
     _FMUState: *mut ffi::c_void
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -483,8 +460,8 @@ pub extern "C" fn fmi3SetIntervalDecimal(
     _valueReferences: *const u32,
     _nValueReferences: usize,
     _intervals: *const f64,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -495,8 +472,8 @@ pub extern "C" fn fmi3SetIntervalFraction(
     _nValueReferences: usize,
     _intervalCounters: *const u64,
     _resolutions: *const u64
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -506,8 +483,8 @@ pub extern "C" fn fmi3SetShiftDecimal(
     _valueReferences: *const u32,
     _nValueReferences: usize,
     _shifts: *const f64,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -518,6 +495,6 @@ pub extern "C" fn fmi3SetShiftFraction(
     _nValueReferences: usize,
     _shiftCounters: *const u64,
     _resolutions: *const u64
-) -> fmi3Status {
-    fmi3Status::fmi3OK
+) -> FmiStatus {
+    FmiStatus::Ok
 }

@@ -17,6 +17,7 @@ pub mod prelude {
     pub use std::ffi;
     pub use super::fmi_types::fmi3::*;
     pub use super::fmi_types::fmi2::*;
+    pub use super::fmi_types::common::*;
     pub use super::unimplemented_functions::*;
     pub use super::FmrsModelFunctions;
     pub use fmrs_model_derive::FmrsModel;

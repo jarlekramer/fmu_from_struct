@@ -1,16 +1,14 @@
 //! Collection of custom types that is necessary to implement the FMI3 standard. The names follows
-//! the original c syntax exactly, and is therefore not idomatic rust. This necessary to allow the 
-//! types to be exposed to the c interface.
+//! the original c syntax exactly, and is therefore not idomatic rust.
 //! 
 //! Note: the fmi types that are directly tranlasted to a standard type, e.g. fmi3Float32, are not
 //! defined here, as it deemed unnecessary. 
 
 use std::ffi;
 
-// ------------------------- Custom names for primitive types --------------------------------------
-#[allow(non_camel_case_types)]
-pub type fmi3String = *const ffi::c_char;
+use crate::fmi_types::common::*;
 
+// ------------------------- Custom names for primitive types --------------------------------------
 #[allow(non_camel_case_types)]
 pub type fmi3Byte = u8;
 #[allow(non_camel_case_types)]
@@ -18,16 +16,6 @@ pub type fmi3Binary = *const fmi3Byte;
 
 
 // ------------------------- Custom enums ----------------------------------------------------------
-#[repr(C)]
-#[allow(non_camel_case_types)]
-pub enum fmi3Status {
-    fmi3OK,
-    fmi3Warning,
-    fmi3Discard,
-    fmi3Error,
-    fmi3Fatal,
-}
-
 #[repr(C)]
 #[allow(non_camel_case_types)]
 pub enum fmi3DependencyKind {
@@ -51,9 +39,9 @@ pub enum fmi3IntervalQualifier {
 #[allow(non_camel_case_types)]
 pub type fmi3LogMessageCallback = extern "C" fn(
     instance_environment: *mut ffi::c_void,
-    status: fmi3Status,
-    category: fmi3String,
-    message: fmi3String,
+    status: FmiStatus,
+    category: *const ffi::c_char,
+    message: *const ffi::c_char,
 );
 
 #[allow(non_camel_case_types)]
