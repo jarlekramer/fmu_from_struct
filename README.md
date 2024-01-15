@@ -18,5 +18,5 @@ be adopted more and more in the near future.
 prelude imports.
 - "fmrs_model_derive" contain the actual derive macro
 - "examples" contain simple examples of how to use the macro
-- "fmrs_model_build_utils" contain (currently a single) python script(s) to take the result from 
-cargo build and zip it with the right folder/file structure for the fmu standard.
+- "fmrs_model_build_utils" contain  python script functionality to take the result from 
+cargo build and package it to an fmu zip file.
