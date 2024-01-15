@@ -1,3 +1,6 @@
+//! This module contains the function to generate the model description file based on the fields of
+//! the struct.
+
 use std::fs::File;
 use std::io::{Write, Error};
 

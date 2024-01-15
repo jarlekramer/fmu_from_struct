@@ -1,3 +1,5 @@
+//! Implements the getters and setters
+
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro2;
 

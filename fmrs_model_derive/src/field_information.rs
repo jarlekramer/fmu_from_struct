@@ -1,8 +1,15 @@
+//! Module to analyze the fields in the strut in the context of the FMI standard.
+//! 
+//! The purpose is to extract fields that should be exposed as an FMI variable, and to determine
+//! what type of variable it is. The type is both the data type and causality, i.e., input, output, 
+//! or parameter.
+
 use syn;
 
 use crate::fmi_version::FmiVersion;
 
 #[derive(Debug, Clone, PartialEq)]
+/// Enum defining the possible causalities in the FMI standard.
 pub enum Causality {
     Parameter,
     Input,
@@ -21,25 +28,31 @@ impl Causality {
     pub fn as_string(&self) -> String {
         match self {
             Causality::Parameter => "parameter".to_string(),
-            Causality::Input => "input".to_string(),
-            Causality::Output => "output".to_string(),
+            Causality::Input     => "input".to_string(),
+            Causality::Output    => "output".to_string(),
         }
     }
 
     pub fn variability_string(&self) -> String {
         match self {
             Causality::Parameter => "tunable".to_string(),
-            Causality::Input => "continuous".to_string(),
-            Causality::Output => "continuous".to_string(),
+            Causality::Input     => "continuous".to_string(),
+            Causality::Output    => "continuous".to_string(),
         }
     }
 }
 
 #[derive(Debug, Clone)]
+/// This struct stores the relevant information about a field
 pub struct FieldInformation {
+    /// The name of the field, taken directly from the input struct
     pub name: syn::Ident,
+    /// The data type of the field, taken directly from the input struct
     pub field_type: syn::Ident,
+    /// The causality of the field, taken from the last attribute specifying the causality
     pub causality: Causality,
+    /// The value reference of the field, used to uniquely identify the field in the setters, 
+    /// getters, and the model description
     pub value_reference: usize,
 }
 
@@ -118,6 +131,8 @@ impl FieldInformation {
         }
     }
 
+    /// Filters the fields based on the daat type. Used to get all the fields of a certain type in
+    /// the setter and getter functions
     pub fn filter_on_type(fields: &[Self], field_type: &syn::Ident) -> Vec<Self> {
         fields.iter()
             .filter(|field| field.field_type == *field_type)
@@ -125,6 +140,8 @@ impl FieldInformation {
             .collect()
     }
 
+    /// Converts the name of the rust variable to the fmi name. Depends both on the FMI version and
+    /// the data type.
     pub fn get_fmi_type_name(fmi_version: FmiVersion, field_type: &syn::Ident) -> String {
         match field_type.to_string().as_str() {
             "f64" => {

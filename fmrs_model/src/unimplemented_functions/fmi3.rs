@@ -44,25 +44,6 @@ pub extern "C" fn fmi3InstantiateScheduledExecution(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3EnterInitializationMode(
-    _instance: *mut ffi::c_void,
-    _toleranceDefined: bool,
-    _tolerance: f64,
-    _startTime: f64,
-    _stopTimeDefined: bool,
-    _stopTime: f64,
-) -> fmi3Status {
-    fmi3Status::fmi3OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi3ExitInitializationMode(_instance: *mut ffi::c_void) -> fmi3Status {
-    fmi3Status::fmi3OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub extern "C" fn fmi3EnterEventMode(_instance: *mut ffi::c_void) -> fmi3Status {
     fmi3Status::fmi3OK
 }
