@@ -3,6 +3,7 @@
 pub use fmrs_model::prelude::*;
 
 /// The model which gets an interface
+#[derive(Debug, Default)]
 struct SpringModel {
     mass: f64, 
     stiffness: f64,
@@ -39,7 +40,7 @@ pub struct SpringInterface {
     pub velocity: f64,
     pub acceleration: f64,
 
-    /// The model which gets an interface
+    // The model which gets an interface
     spring_model: Option<SpringModel>, // The option is necessary as default values are required for the FMI interface. Otherwise, it is impossible to initialize the model before parameters are set.
 }
 
@@ -59,7 +60,7 @@ impl FmrsModelFunctions for SpringInterface {
     }
 
     fn do_step(&mut self, _current_time: f64, time_step: f64) {
-        if let Some(model) == self.spring_model {
+        if let Some(ref mut model) = self.spring_model {
             model.do_step(time_step);
 
             self.acceleration = model.acceleration;
