@@ -106,7 +106,7 @@ impl FieldInformation {
         
                                         segment.ident.clone()
                                     },
-                                    _ => unimplemented!(),
+                                    _ => unimplemented!("A field in the struct seems to have an unsupported type"),
                                 };
 
                                 let field_information = FieldInformation {
@@ -124,7 +124,7 @@ impl FieldInformation {
                        
                         fields_information
                     },
-                    syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!(),
+                    syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!("Only named fields are supported"),
                 }
             },
             _ =>  panic!("Only structs are supported"),
@@ -189,7 +189,8 @@ impl FieldInformation {
                 FmiVersion::Fmi2 => panic!("FMI 2 does not support u64"),
             },
             "bool" => "Boolean".to_string(),
-            _ => panic!("Type not supported"),
+            "String" => "String".to_string(),
+            _ => panic!("From field_information.rs, get_fmi_type_name. Type not supported: {}", field_type.to_string()),
         }
     }
 
@@ -198,8 +199,8 @@ impl FieldInformation {
             "f64" => "0.0".to_string(),
             "bool" => "false".to_string(),
             "i32" => "0".to_string(),
-            _ => unimplemented!(),
+            "String" => "".to_string(),
+            _ => unimplemented!("A default start value for this type is not implemented: {}", field_type.to_string()),
         }
     }
-    
 }

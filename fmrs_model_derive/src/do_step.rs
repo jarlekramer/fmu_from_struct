@@ -18,7 +18,7 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
                 current_communication_point: f64,
                 communication_step_size: f64,
                 _no_set_fmu_state_prior_to_current_point: bool,
-            ) -> fmi2Status
+            ) -> FmiStatus
         },
         FmiVersion::Fmi3 => quote! {
             #[no_mangle]
@@ -32,13 +32,8 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
                 _terminate_simulation: *mut bool,
                 _early_return: *mut bool,
                 _last_successful_time: *mut f64,
-            ) -> fmi3Status
+            ) -> FmiStatus
         },
-    };
-
-    let return_value = match fmi_version {
-        FmiVersion::Fmi2 => quote! { fmi2Status::fmi2OK },
-        FmiVersion::Fmi3 => quote! { fmi3Status::fmi3OK },
     };
 
     let tokens = quote! {
@@ -49,7 +44,7 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
                 model.do_step(current_communication_point, communication_step_size);
             }
             
-            #return_value
+            FmiStatus::Ok
         }
     
     };

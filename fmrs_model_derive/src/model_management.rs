@@ -73,7 +73,7 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
 fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => {
-            quote! { fmi2EnterInitializationMode(instance: *mut ffi::c_void) -> fmi2Status }
+            quote! { fmi2EnterInitializationMode(instance: *mut ffi::c_void) -> FmiStatus }
         },
         FmiVersion::Fmi3 => {
             quote! { fmi3EnterInitializationMode(
@@ -83,14 +83,8 @@ fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
                 start_time: f64,
                 stop_time_defined: bool,
                 stop_time: f64,
-            ) -> fmi3Status }
+            ) -> FmiStatus }
         },
-    };
-
-
-    let return_value = match fmi_version {
-        FmiVersion::Fmi2 => quote! { fmi2Status::fmi2OK },
-        FmiVersion::Fmi3 => quote! { fmi3Status::fmi3OK },
     };
 
     // Returns code that currently does nothing...
@@ -98,7 +92,7 @@ fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
         #[no_mangle]
         #[allow(non_snake_case)]
         pub extern "C" fn #function_signature {
-            #return_value
+            FmiStatus::Ok
         }
     }
 }
@@ -106,16 +100,11 @@ fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
 fn impl_exit_initialization_mode(fmi_version: FmiVersion, structure_name: &syn::Ident) -> TokenStream2 {
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => {
-            quote! { fmi2ExitInitializationMode(instance: *mut ffi::c_void) -> fmi2Status }
+            quote! { fmi2ExitInitializationMode(instance: *mut ffi::c_void) -> FmiStatus }
         },
         FmiVersion::Fmi3 => {
-            quote! { fmi3ExitInitializationMode(instance: *mut ffi::c_void) -> fmi3Status }
+            quote! { fmi3ExitInitializationMode(instance: *mut ffi::c_void) -> FmiStatus }
         },
-    };
-
-    let return_value = match fmi_version {
-        FmiVersion::Fmi2 => quote! { fmi2Status::fmi2OK },
-        FmiVersion::Fmi3 => quote! { fmi3Status::fmi3OK },
     };
 
     quote! {
@@ -128,7 +117,7 @@ fn impl_exit_initialization_mode(fmi_version: FmiVersion, structure_name: &syn::
                 model.exit_initialization_mode();
             }
 
-            #return_value
+            FmiStatus::Ok
         }
     }
 }

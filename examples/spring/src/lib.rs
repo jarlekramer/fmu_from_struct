@@ -12,6 +12,7 @@ pub struct Spring {
     pub mass: f64,
     pub stiffness: f64,
     pub damping: f64,
+    pub output_message: String, // Test variable to see if the string implementation works.
     #[output] // Every variable below this attribute will be an output variable. Input is also possible but not used here.
     pub position: f64,
     pub velocity: f64,
@@ -33,6 +34,8 @@ impl FmrsModelFunctions for Spring {
 
         self.velocity += self.acceleration * time_step;
         self.position += self.velocity * time_step;
+
+        println!("Output message: {}", self.output_message);
     }
 
     /// Optional function that runs after the first initialization of the model. Implemented here 
