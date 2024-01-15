@@ -27,16 +27,18 @@ pub fn fmrs_model_derive(input: TokenStream) -> TokenStream {
     let _write_res = model_description::generate_model_description(fmi_version, &name.to_string(), &fields);
 
     // Generate the code for the fmi interface
-    let managment_tokens = model_management::impl_model_managment(fmi_version, name);
-    let get_tokens       = get_and_set::impl_get_functions(fmi_version, name, &fields);
-    let set_tokens       = get_and_set::impl_set_functions(fmi_version, name, &fields);
-    let do_step_tokens   = do_step::impl_do_step(fmi_version, name);
+    let init_tokens    = model_management::impl_init_functions(fmi_version, name);
+    let get_tokens     = get_and_set::impl_get_functions(fmi_version, name, &fields);
+    let set_tokens     = get_and_set::impl_set_functions(fmi_version, name, &fields);
+    let do_step_tokens = do_step::impl_do_step(fmi_version, name);
+    let free_tokens    = model_management::impl_free_instance(fmi_version, name);
 
     quote! {
-        #managment_tokens
+        #init_tokens
         #get_tokens
         #set_tokens
         #do_step_tokens
+        #free_tokens
     }.into()
 }
 

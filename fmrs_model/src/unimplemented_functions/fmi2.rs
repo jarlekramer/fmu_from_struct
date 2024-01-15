@@ -31,22 +31,6 @@ pub extern "C" fn fmi2SetupExperiment(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi2EnterInitializationMode(
-    _instance: *mut ffi::c_void,
-) -> fmi2Status {
-    fmi2Status::fmi2OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2ExitInitializationMode(
-    _instance: *mut ffi::c_void,
-) -> fmi2Status {
-    fmi2Status::fmi2OK
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub extern "C" fn fmi2Terminate(
     _instance: *mut ffi::c_void,
 ) -> fmi2Status {

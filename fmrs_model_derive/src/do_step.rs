@@ -1,3 +1,6 @@
+//! Implements the `do_step` function for the generated FMU struct.
+
+
 use proc_macro2::TokenStream as TokenStream2;
 
 use quote::quote;

@@ -1,3 +1,8 @@
+//! Example of to model a spring when the model is implemented directly together with the fmi struct.
+//! 
+//! See the spring_interface example for the same physics, but where the model is in a separate 
+//! structure.
+
 pub use fmrs_model::prelude::*;
 
 #[derive(FmrsModel, Debug, Default)]
@@ -15,9 +20,9 @@ pub struct Spring {
     private_test_variable: bool, // Private variables do not get an FMI-interface, but can be used internally in the model if needed.
 }
 
-impl Spring {
-    /// Currently the only mandatory function. Should probably be a trait in the future...
-    pub fn do_step(&mut self, _current_time: f64, time_step: f64) {
+impl FmrsModelFunctions for Spring {
+    /// Currently the only mandatory function in the FmrsModelFunctions trait.
+    fn do_step(&mut self, _current_time: f64, time_step: f64) {
         let force = -self.stiffness * self.position - self.damping * self.velocity;
 
         self.acceleration = if self.mass != 0.0 {
@@ -28,5 +33,14 @@ impl Spring {
 
         self.velocity += self.acceleration * time_step;
         self.position += self.velocity * time_step;
+    }
+
+    /// Optional function that runs after the first initialization of the model. Implemented here 
+    /// for test purposes. The test is to see whether the values in the struct is the same as 
+    /// defined by the simulation setup (gui or model description file for the simulation)
+    fn exit_initialization_mode(&mut self) {
+        println!("Exiting initialization mode!");
+
+        dbg!(self);
     }
 }
