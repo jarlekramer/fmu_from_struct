@@ -8,10 +8,6 @@ use std::ffi;
 
 use crate::fmi_types::common::*;
 
-// ------------------------- Custom names for primitive types --------------------------------------
-#[allow(non_camel_case_types)]
-pub type fmi2Byte = ffi::c_char;
-
 
 // -------------------------- Custom enums ---------------------------------------------------------
 #[repr(C)]

@@ -83,19 +83,38 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
                 )?;
             },
             FmiVersion::Fmi3 => {
-                write!(
-                    file, 
-                    "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\" initial=\"exact\" start=\"{}\"/>\n", 
-                    FieldInformation::get_fmi_type_name(fmi_version, &field.field_type), 
-                    field.name,
-                    field.value_reference,
-                    field.causality.as_string(),
-                    field.causality.variability_string(),
-                    FieldInformation::get_default_start_value_string(&field.field_type),
-                )?;
+                match field.field_type.to_string().as_str() {
+                    "String" => {
+                        write!(
+                            file, 
+                            "    <String name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\" initial=\"exact\">\n", 
+                            field.name,
+                            field.value_reference,
+                            field.causality.as_string(),
+                            field.causality.variability_string(),
+                        )?;
+
+                        write!(
+                            file,
+                            "        <Start value=\"{}\"/>\n    </String>\n",
+                            FieldInformation::get_default_start_value_string(&field.field_type),
+                        )?;
+                    },
+                    _ => {
+                        write!(
+                            file, 
+                            "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\" initial=\"exact\" start=\"{}\"/>\n", 
+                            FieldInformation::get_fmi_type_name(fmi_version, &field.field_type), 
+                            field.name,
+                            field.value_reference,
+                            field.causality.as_string(),
+                            field.causality.variability_string(),
+                            FieldInformation::get_default_start_value_string(&field.field_type),
+                        )?;
+                    }
+                }
             },
         }
-        
     }
 
     write!(file, "</ModelVariables>\n\n")?;

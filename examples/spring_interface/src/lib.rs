@@ -3,7 +3,7 @@
 pub use fmrs_model::prelude::*;
 
 /// The model which gets an interface
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 struct SpringModel {
     mass: f64, 
     stiffness: f64,
@@ -28,7 +28,7 @@ impl SpringModel {
     }
 }
 
-#[derive(FmrsModel, Debug, Default)]
+#[derive(FmrsModel, Debug, Default, Clone)]
 #[fmi_version = 2]
 pub struct SpringInterface {
     #[parameter]
