@@ -9,6 +9,15 @@ use quote::quote;
 use syn;
 
 use crate::fmi_version::FmiVersion;
+use crate::superstructure::get_superstructure_name;
+
+pub fn get_instance(structure_name: &syn::Ident) -> TokenStream2 {
+    let superstructre_name = get_superstructure_name(structure_name);
+
+    quote! {
+        let instance: &mut #superstructre_name = &mut *(instance_ptr as *mut #superstructre_name);
+    }
+}
 
 pub fn impl_init_functions(fmi_version: FmiVersion, model_name: &syn::Ident) -> TokenStream2 {
     let instanciate_tokens = impl_instantiate(fmi_version, model_name);
@@ -57,13 +66,20 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
             ) -> *mut ffi::c_void 
         },
     };
+
+    let superstructre_name = get_superstructure_name(structure_name);
     
     quote! {
         #function_signature {
             // The box is needed to avoid the model to be dropped when it goes out of scope.
-            let mut model = Box::new(#structure_name::default());
+            let mut instance = Box::new(
+                #superstructre_name {
+                    instance_name: String::from("Test"), // TODO: Get instance name from _instance_name
+                    model: #structure_name::default(),
+                };
+            );
 
-            let ptr = Box::into_raw(model) as *mut _;
+            let ptr = Box::into_raw(instance) as *mut _;
 
             ptr as *mut ffi::c_void
         }
@@ -77,7 +93,7 @@ fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
         },
         FmiVersion::Fmi3 => {
             quote! { fmi3EnterInitializationMode(
-                instance: *mut ffi::c_void,
+                instance_ptr: *mut ffi::c_void,
                 tolerance_defined: bool,
                 tolerance: f64,
                 start_time: f64,
@@ -100,21 +116,23 @@ fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
 fn impl_exit_initialization_mode(fmi_version: FmiVersion, structure_name: &syn::Ident) -> TokenStream2 {
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => {
-            quote! { fmi2ExitInitializationMode(instance: *mut ffi::c_void) -> FmiStatus }
+            quote! { fmi2ExitInitializationMode(instance_ptr: *mut ffi::c_void) -> FmiStatus }
         },
         FmiVersion::Fmi3 => {
-            quote! { fmi3ExitInitializationMode(instance: *mut ffi::c_void) -> FmiStatus }
+            quote! { fmi3ExitInitializationMode(instance_ptr: *mut ffi::c_void) -> FmiStatus }
         },
     };
+
+    let instance_tokens = get_instance(structure_name);
 
     quote! {
         #[no_mangle]
         #[allow(non_snake_case)]
         pub extern "C" fn #function_signature {
             unsafe {
-                let model: &mut #structure_name = &mut *(instance as *mut #structure_name);
+                #instance_tokens;
 
-                model.exit_initialization_mode();
+                instance.model.exit_initialization_mode();
             }
 
             FmiStatus::Ok
@@ -124,18 +142,20 @@ fn impl_exit_initialization_mode(fmi_version: FmiVersion, structure_name: &syn::
 
 
 /// Free the model when the simulation is done.
-pub fn impl_free_instance(fmi_version: FmiVersion, model_name: &syn::Ident) -> TokenStream2 {
+pub fn impl_free_instance(fmi_version: FmiVersion, structure_name: &syn::Ident) -> TokenStream2 {
     let function_name = match fmi_version {
         FmiVersion::Fmi2 => quote! { fmi2FreeInstance },
         FmiVersion::Fmi3 => quote! { fmi3FreeInstance },
     };
 
+    let instance_tokens = get_instance(structure_name);
+
     quote! {
         #[no_mangle]
         #[allow(non_snake_case)]
-        pub unsafe extern "C" fn #function_name(instance: *mut ffi::c_void) {
+        pub unsafe extern "C" fn #function_name(instance_ptr: *mut ffi::c_void) {
             if !instance.is_null() {
-                let instance = instance as *mut #model_name;
+                #instance_tokens;
 
                 let _box = Box::from_raw(instance);
                 // _box is dropped here and memory is deallocated
