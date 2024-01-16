@@ -38,7 +38,7 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
             #[no_mangle]
             #[allow(non_snake_case)]
             pub extern "C" fn fmi2Instantiate(
-                _instance_name: *const ffi::c_char,
+                instance_name: *const ffi::c_char,
                 _fmu_type: fmi2Type,
                 _fmu_guid: *const ffi::c_char,
                 _fmu_resource_location: *const ffi::c_char,
@@ -51,7 +51,7 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
             #[no_mangle]
             #[allow(non_snake_case)]
             pub extern "C" fn fmi3InstantiateCoSimulation(
-                _instance_name: *const ffi::c_char,
+                instance_name: *const ffi::c_char,
                 _instantiation_token: *const ffi::c_char,
                 _resource_path: *const ffi::c_char,
                 _visible: bool,
@@ -71,17 +71,21 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
     
     quote! {
         #function_signature {
-            // The box is needed to avoid the model to be dropped when it goes out of scope.
-            let mut instance = Box::new(
-                #superstructre_name {
-                    instance_name: String::from("Test"), // TODO: Get instance name from _instance_name
-                    model: #structure_name::default(),
-                };
-            );
+            unsafe {
+                let instance_name: String = ffi::CStr::from_ptr(instance_name).to_string_lossy().into_owned();
 
-            let ptr = Box::into_raw(instance) as *mut _;
+                // The box is needed to avoid the model to be dropped when it goes out of scope.
+                let mut instance = Box::new(
+                    #superstructre_name {
+                        instance_name,
+                        model: #structure_name::default(),
+                    }
+                );
 
-            ptr as *mut ffi::c_void
+                let ptr = Box::into_raw(instance) as *mut _;
+
+                ptr as *mut ffi::c_void
+            }
         }
     }
 }
@@ -89,7 +93,7 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
 fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => {
-            quote! { fmi2EnterInitializationMode(instance: *mut ffi::c_void) -> FmiStatus }
+            quote! { fmi2EnterInitializationMode(instance_ptr: *mut ffi::c_void) -> FmiStatus }
         },
         FmiVersion::Fmi3 => {
             quote! { fmi3EnterInitializationMode(
@@ -154,7 +158,7 @@ pub fn impl_free_instance(fmi_version: FmiVersion, structure_name: &syn::Ident) 
         #[no_mangle]
         #[allow(non_snake_case)]
         pub unsafe extern "C" fn #function_name(instance_ptr: *mut ffi::c_void) {
-            if !instance.is_null() {
+            if !instance_ptr.is_null() {
                 #instance_tokens;
 
                 let _box = Box::from_raw(instance);
