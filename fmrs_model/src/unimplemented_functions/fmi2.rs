@@ -3,19 +3,6 @@ use crate::fmi_types::common::*;
 
 use std::ffi;
 
-// ------------------------------- Version ---------------------------------------------------------
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2GetVersion() -> *const ffi::c_char {
-    "2.0".as_ptr() as *const ffi::c_char
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2GetTypesPlatform() -> *const ffi::c_char {
-    "default".as_ptr() as *const ffi::c_char
-}
-
 // ------------------------------- Model managment -------------------------------------------------
 #[no_mangle]
 #[allow(non_snake_case)]
@@ -35,7 +22,7 @@ pub extern "C" fn fmi2SetupExperiment(
 pub extern "C" fn fmi2Terminate(
     _instance: *mut ffi::c_void,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -43,7 +30,7 @@ pub extern "C" fn fmi2Terminate(
 pub extern "C" fn fmi2Reset(
     _instance: *mut ffi::c_void,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -51,69 +38,10 @@ pub extern "C" fn fmi2Reset(
 pub extern "C" fn fmi2CancelStep(
     _instance: *mut ffi::c_void,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
-// ------------------------------- Serialize -------------------------------------------------------
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2SerializedFMUstateSize(
-    _instance: *mut ffi::c_void,
-    _fmu_state: *mut ffi::c_void,
-    _size: *mut usize,
-) -> FmiStatus {
-    FmiStatus::Ok
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2SerializeFMUstate(
-    _instance: *mut ffi::c_void,
-    _fmu_state: *mut ffi::c_void,
-    _serialized_state: *mut ffi::c_char,
-    _size: usize,
-) -> FmiStatus {
-    FmiStatus::Ok
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2DeSerializeFMUstate(
-    _instance: *mut ffi::c_void,
-    _fmu_state: *mut ffi::c_void,
-    _serialized_state: *const ffi::c_char,
-    _size: usize,
-) -> FmiStatus {
-    FmiStatus::Ok
-}
 // ------------------------------- Getting and setting variables -----------------------------------
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2GetFMUstate(
-    _instance: *mut ffi::c_void,
-    _fmu_state: *mut ffi::c_void,
-) -> FmiStatus {
-    FmiStatus::Ok
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2SetFMUstate(
-    _instance: *mut ffi::c_void,
-    _fmu_state: *const ffi::c_void,
-) -> FmiStatus {
-    FmiStatus::Ok
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2FreeFMUstate(
-    _instance: *mut ffi::c_void,
-    _fmu_state: *mut ffi::c_void,
-) -> FmiStatus {
-    FmiStatus::Ok
-}
-
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi2SetDebugLogging(
@@ -122,7 +50,7 @@ pub extern "C" fn fmi2SetDebugLogging(
     _n_categories: usize,
     _categories: *const *const ffi::c_char,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -135,7 +63,7 @@ pub extern "C" fn fmi2GetDirectionalDerivative(
     _n_z_ref: usize,
     _dv: *mut f64,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -147,7 +75,7 @@ pub extern "C" fn fmi2SetRealInputDerivatives(
     _order: *const i32,
     _value: *const f64,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -159,7 +87,7 @@ pub extern "C" fn fmi2GetRealOutputDerivatives(
     _order: *const i32,
     _value: *mut f64,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -169,7 +97,7 @@ pub extern "C" fn fmi2GetStatus(
     _status_kind: fmi2StatusKind,
     _value: *mut FmiStatus,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -179,7 +107,7 @@ pub extern "C" fn fmi2GetRealStatus(
     _status_kind: fmi2StatusKind,
     _value: *mut f64,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -189,7 +117,7 @@ pub extern "C" fn fmi2GetIntegerStatus(
     _status_kind: fmi2StatusKind,
     _value: *mut i32,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -199,7 +127,7 @@ pub extern "C" fn fmi2GetBooleanStatus(
     _status_kind: fmi2StatusKind,
     _value: *mut bool,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }
 
 #[no_mangle]
@@ -209,5 +137,5 @@ pub unsafe extern "C" fn fmi2GetStringStatus(
     _status_kind: fmi2StatusKind,
     _value: *mut *const ffi::c_char,
 ) -> FmiStatus {
-    FmiStatus::Ok
+    FmiStatus::Error
 }

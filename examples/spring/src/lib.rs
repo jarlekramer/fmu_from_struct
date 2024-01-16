@@ -5,7 +5,7 @@
 
 pub use fmrs_model::prelude::*;
 
-#[derive(FmrsModel, Debug, Default)]
+#[derive(FmrsModel, Debug, Clone, Default)]
 #[fmi_version = 2]
 pub struct Spring {
     #[parameter] // Every variable below this attribute will be a parameter.
