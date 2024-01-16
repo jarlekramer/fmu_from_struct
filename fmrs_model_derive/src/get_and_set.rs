@@ -8,6 +8,8 @@ use syn;
 
 use super::field_information::FieldInformation;
 use super::fmi_version::FmiVersion;
+use super::model_management::get_instance;
+
 
 /// Generates the getter functions for all variable types
 pub fn impl_get_functions(fmi_version: FmiVersion, name: &syn::Ident, fields: &[FieldInformation]) -> TokenStream2 {
@@ -100,7 +102,7 @@ fn get_function_signature(fmi_version: FmiVersion, field_type: &syn::Ident, acce
             #[no_mangle]
             #[allow(non_snake_case)]
             pub extern "C" fn #function_name(
-                instance: *mut ffi::c_void,
+                instance_ptr: *mut ffi::c_void,
                 value_references: *const u32,
                 n_value_references: usize,
                 values: #c_field_tokens,
@@ -110,7 +112,7 @@ fn get_function_signature(fmi_version: FmiVersion, field_type: &syn::Ident, acce
             #[no_mangle]
             #[allow(non_snake_case)]
             pub extern "C" fn #function_name(
-                instance: *mut ffi::c_void,
+                instance_ptr: *mut ffi::c_void,
                 value_references: *const u32,
                 n_value_references: usize,
                 values: #c_field_tokens,
@@ -130,6 +132,8 @@ fn impl_get_function(
 
     let filtered_fields = FieldInformation::filter_on_type(all_fields, field_type);
 
+    let instance_tokens = get_instance(name);
+
     if filtered_fields.is_empty() {
         quote! {
             #function_signature {
@@ -144,8 +148,7 @@ fn impl_get_function(
             quote! {
                 #function_signature {
                     unsafe {
-                        let ptr = instance as *mut #name;
-                        let model: &mut #name = &mut *ptr;
+                        #instance_tokens;
     
                         for i in 0..n_value_references {
                             let input_value_reference = *value_references.offset(i as isize) as usize;
@@ -153,7 +156,7 @@ fn impl_get_function(
                             match input_value_reference {
                                 #(
                                     #field_value_references => {
-                                        let rust_string = model.#field_names.clone();
+                                        let rust_string = instance.model.#field_names.clone();
 
                                         let c_string = ffi::CString::new(rust_string).unwrap();
 
@@ -172,8 +175,7 @@ fn impl_get_function(
             quote! {
                 #function_signature {
                     unsafe {
-                        let ptr = instance as *mut #name;
-                        let model: &mut #name = &mut *ptr;
+                        #instance_tokens;
     
                         for i in 0..n_value_references {
                             let input_value_reference = *value_references.offset(i as isize) as usize;
@@ -181,7 +183,7 @@ fn impl_get_function(
                             match input_value_reference {
                                 #(
                                     #field_value_references => {
-                                        *values.offset(i as isize) = model.#field_names;
+                                        *values.offset(i as isize) = instance.model.#field_names;
                                     }
                                 )*
                                 _ => {panic!("Unknown value reference: {}", input_value_reference)} // Consider changing this to return an error
@@ -205,6 +207,8 @@ fn impl_set_function(
     let function_signature = get_function_signature(fmi_version, field_type, Access::Set);
 
     let filtered_fields = FieldInformation::filter_on_type(all_fields, field_type);
+
+    let instance_tokens = get_instance(name);
 
     if filtered_fields.is_empty() {
         quote! {
@@ -233,8 +237,7 @@ fn impl_set_function(
         quote! {
             #function_signature {
                 unsafe {
-                    let ptr = instance as *mut #name;
-                    let model: &mut #name = &mut *ptr;
+                    #instance_tokens;
 
                     for i in 0..n_value_references {
                         let input_value_reference = *value_references.offset(i as isize) as usize;
@@ -244,7 +247,7 @@ fn impl_set_function(
                                 #field_value_references => {
                                     #set_value_at_index;
 
-                                    model.#field_names = value;
+                                    instance.model.#field_names = value;
                                 }
                             )*
                             _ => {panic!("Unknown value reference: {}", input_value_reference)} // Consider changing this to return an error
