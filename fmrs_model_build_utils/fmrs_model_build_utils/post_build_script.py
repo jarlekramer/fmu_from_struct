@@ -35,8 +35,10 @@ if __name__ == "__main__":
 
     if args.release:
         builder_path = Path("target/release")
+        print("Package a release build")
     else:
         builder_path = Path("target/debug")
+        print("Package a debug build")
 
     archive = zipfile.ZipFile(f"{model_name}.fmu", "w")
     archive.write("modelDescription.xml", "modelDescription.xml")
