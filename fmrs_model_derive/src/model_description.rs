@@ -22,99 +22,25 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
         FmiVersion::Fmi3 => "instantiationToken".to_string(),
     };
 
+    // ------------------------- Header ------------------------------------------------------------
+
     write!(file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")?;
-    write!(file, r#"
-<fmiModelDescription 
-    fmiVersion="{}" 
-    modelName="{}" 
-    description="to come"
-    generationTool="The FmrsModel macro for automatic fmi generation for rust structs"
-    {}="{{{}}}"
->
-"#, fmi_version.to_model_description_string(), name, id_string, id)?;
+    write!(file, "<fmiModelDescription\n")?;
+    write!(file, "    fmiVersion=\"{}\"\n", fmi_version.to_model_description_string())?;
+    write!(file, "    modelName=\"{}\"\n", name)?;
+    write!(file, "    description=\"to come\"\n")?;
+    write!(file, "    generationTool=\"The FmrsModel macro for automatic fmi generation for rust structs\"\n")?;
+    write!(file, "    {}=\"{}\"\n", id_string, id)?;
+    write!(file, ">\n")?;
 
-    write!(file, r#"
-<CoSimulation 
-    modelIdentifier="{}" 
-/>
-"#, name)?;
+    write!(file, "<CoSimulation\n    modelIdentifier=\"{}\"/>\n", name)?;
 
-// ------------------------- ModelVariables --------------------------------------------------------
+    // ------------------------- ModelVariables ----------------------------------------------------
 
-    match fmi_version {
-        FmiVersion::Fmi2 => {
-            write!(file, r#"
-<ModelVariables>
-    <ScalarVariable name="time" valueReference="0" causality="independent" variability="continuous" description="Simulation time">
-        <Real/>
-    </ScalarVariable>
-"#)?;  
-        },
-        FmiVersion::Fmi3 => { 
-            write!(file, r#"
-<ModelVariables>
-    <Float64 name="time" valueReference="0" causality="independent" variability="continuous" description="Simulation time"/>
-"#)?;
-        }
-    }
+    write!(file, "<ModelVariables>\n")?;
 
     for field in fields {
-        match fmi_version {
-            FmiVersion::Fmi2 => {
-                write!(
-                    file, 
-                    "    <ScalarVariable name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\" initial=\"exact\">\n",  
-                    field.name,
-                    field.value_reference,
-                    field.causality.as_string(),
-                    field.causality.variability_string(),
-                )?;
-
-                write!(
-                    file,
-                    "        <{} start=\"{}\"/>\n",
-                    FieldInformation::get_fmi_type_name(fmi_version, &field.field_type),
-                    FieldInformation::get_default_start_value_string(&field.field_type),
-                )?;
-
-                write!(
-                    file,
-                    "    </ScalarVariable>\n"
-                )?;
-            },
-            FmiVersion::Fmi3 => {
-                match field.field_type.to_string().as_str() {
-                    "String" => {
-                        write!(
-                            file, 
-                            "    <String name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\" initial=\"exact\">\n", 
-                            field.name,
-                            field.value_reference,
-                            field.causality.as_string(),
-                            field.causality.variability_string(),
-                        )?;
-
-                        write!(
-                            file,
-                            "        <Start value=\"{}\"/>\n    </String>\n",
-                            FieldInformation::get_default_start_value_string(&field.field_type),
-                        )?;
-                    },
-                    _ => {
-                        write!(
-                            file, 
-                            "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\" initial=\"exact\" start=\"{}\"/>\n", 
-                            FieldInformation::get_fmi_type_name(fmi_version, &field.field_type), 
-                            field.name,
-                            field.value_reference,
-                            field.causality.as_string(),
-                            field.causality.variability_string(),
-                            FieldInformation::get_default_start_value_string(&field.field_type),
-                        )?;
-                    }
-                }
-            },
-        }
+        write!(file, "{}", field.model_description_string(fmi_version))?;
     }
 
     write!(file, "</ModelVariables>\n\n")?;
@@ -125,7 +51,6 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
     let outputs: Vec<usize> = fields.iter()
         .filter(|field| field.causality == Causality::Output)
         .map(|field| field.value_reference).collect();
-
 
     match fmi_version {
         FmiVersion::Fmi2 => {

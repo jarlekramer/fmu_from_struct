@@ -32,14 +32,6 @@ impl Causality {
             Causality::Output    => "output".to_string(),
         }
     }
-
-    pub fn variability_string(&self) -> String {
-        match self {
-            Causality::Parameter => "tunable".to_string(),
-            Causality::Input     => "continuous".to_string(),
-            Causality::Output    => "continuous".to_string(),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -138,6 +130,55 @@ impl FieldInformation {
             .filter(|field| field.field_type == *field_type)
             .map(|field| field.clone())
             .collect()
+    }
+
+    pub fn variability_string(&self) -> String {
+        match self.causality {
+            Causality::Parameter => {
+                "fixed".to_string()
+            },
+            Causality::Input => {
+                "discrete".to_string()
+            },
+            Causality::Output => {
+                "discrete".to_string()
+            },
+        }
+    }
+
+    pub fn model_description_string(&self, fmi_version: FmiVersion) -> String {
+        let variable_start_kw = match fmi_version {
+            FmiVersion::Fmi2 => "ScalarVariable".to_string(),
+            FmiVersion::Fmi3 => FieldInformation::get_fmi_type_name(fmi_version, &self.field_type),
+        };
+
+        let tail = format!(
+            "    </{}>\n",
+            variable_start_kw,
+        );
+        
+        let header = format!(
+            "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\">\n",
+            variable_start_kw,
+            self.name,
+            self.value_reference,
+            self.causality.as_string(),
+            self.variability_string(),
+        );
+
+        let body = match self.causality {
+            Causality::Parameter | Causality::Input => {
+                format!(
+                    "        <Real start=\"{}\"/>\n",
+                    FieldInformation::get_default_start_value_string(&self.field_type),
+                )
+            },
+            Causality::Output => {
+                format!("        <Real/>\n")
+            }
+        };
+
+        format!("{}{}{}", header, body, tail)
     }
 
     /// Converts the name of the rust variable to the fmi name. Depends both on the FMI version and

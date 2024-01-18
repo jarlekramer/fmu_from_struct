@@ -22,7 +22,7 @@ pub extern "C" fn fmi2SetupExperiment(
 pub extern "C" fn fmi2Terminate(
     _instance: *mut ffi::c_void,
 ) -> FmiStatus {
-    FmiStatus::Error
+    FmiStatus::Ok
 }
 
 #[no_mangle]

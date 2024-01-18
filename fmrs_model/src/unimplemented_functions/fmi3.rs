@@ -44,7 +44,7 @@ pub extern "C" fn fmi3EnterEventMode(_instance: *mut ffi::c_void) -> FmiStatus {
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi3Terminate(_instance: *mut ffi::c_void) -> FmiStatus {
-    FmiStatus::Error
+    FmiStatus::Ok
 }
 
 #[no_mangle]
