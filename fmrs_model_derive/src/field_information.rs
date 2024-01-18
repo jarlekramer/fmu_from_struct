@@ -166,15 +166,24 @@ impl FieldInformation {
             self.variability_string(),
         );
 
+        let start_value_name = match self.field_type.to_string().as_str() {
+            "f64" => "Real".to_string(),
+            "bool" => "Boolean".to_string(),
+            "i32" => "Real".to_string(),
+            "String" => "String".to_string(),
+            _ => unimplemented!("A start value for this type is not implemented: {}", self.field_type.to_string()),
+        };
+
         let body = match self.causality {
             Causality::Parameter | Causality::Input => {
                 format!(
-                    "        <Real start=\"{}\"/>\n",
+                    "        <{} start=\"{}\"/>\n",
+                    start_value_name,
                     FieldInformation::get_default_start_value_string(&self.field_type),
                 )
             },
             Causality::Output => {
-                format!("        <Real/>\n")
+                format!("        <{}/>\n", start_value_name)
             }
         };
 
