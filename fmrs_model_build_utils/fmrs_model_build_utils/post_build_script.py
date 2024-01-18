@@ -4,7 +4,14 @@ import zipfile
 
 import xml.etree.ElementTree as ElementTree
 
+import argparse
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Build FMU from Rust model')
+    parser.add_argument('--release', action='store_true')
+
+    args = parser.parse_args()
+
     current_folder_name = Path.cwd().parts[-1]    
 
     # Check that modelDescription.xml exists. If not, the user is either in a wrong folder, or "cargo build" is not executed
@@ -26,7 +33,10 @@ if __name__ == "__main__":
     
     model_name = model_description.getroot().attrib['modelName']
 
-    builder_path = Path("target/debug")
+    if args.release:
+        builder_path = Path("target/release")
+    else:
+        builder_path = Path("target/debug")
 
     archive = zipfile.ZipFile(f"{model_name}.fmu", "w")
     archive.write("modelDescription.xml", "modelDescription.xml")
