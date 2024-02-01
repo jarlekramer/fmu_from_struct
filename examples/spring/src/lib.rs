@@ -10,6 +10,7 @@ pub use fmrs_model::prelude::*;
 pub struct Spring {
     #[parameter] // Every variable below this attribute will be a parameter.
     pub mass: f64,
+    /// Test of doc strings
     pub stiffness: f64,
     pub damping: f64,
     pub output_message: String, // Test variable to see if the string implementation works.

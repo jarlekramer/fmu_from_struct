@@ -66,27 +66,21 @@ impl FieldInformation {
                         let mut causality = Causality::Parameter;
     
                         for field in fields.named.iter() {
-                            let visibility = &field.vis;
-
+                            
+                            // Chekc for updates to the variable type
                             let attributes = &field.attrs;
 
-                            if attributes.len() > 0 {
-                                let attribute = &attributes[0]; // TODO: consider the need to support multiple attributes
-
-                                let path = &attribute.path();
-
-                                let segments = &path.segments;
-
-                                let segment = &segments[0];
-
-                                let ident = &segment.ident;
-
-                                let string = ident.to_string();
-
-                                causality = Causality::from_string(&string);
+                            for attribute in attributes.iter() {
+                                let attribute_type = &attribute.path().segments[0].ident.to_string();
+                                
+                                if attribute_type == "parameter" || attribute_type == "input" || attribute_type == "output" {
+                                    causality = Causality::from_string(attribute_type);
+                                }
                             }
 
                             // Skip private fields
+                            let visibility = &field.vis;
+
                             if let syn::Visibility::Public(_) = visibility {
                                 let field_type = match &field.ty {
                                     syn::Type::Path(type_path) => {
