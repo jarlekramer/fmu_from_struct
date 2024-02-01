@@ -56,6 +56,7 @@ impl FieldInformation {
         let data: &syn::Data = &input.data;
 
         match *data {
+            // Make sure the data is a struct
             syn::Data::Struct(ref data) => {
                 match data.fields {
                     syn::Fields::Named(ref fields) => {
@@ -67,7 +68,7 @@ impl FieldInformation {
     
                         for field in fields.named.iter() {
                             
-                            // Chekc for updates to the variable type
+                            // Check for updates to the variable type
                             let attributes = &field.attrs;
 
                             for attribute in attributes.iter() {
