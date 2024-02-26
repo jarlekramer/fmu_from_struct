@@ -2,7 +2,7 @@
 name = "fmu_from_struct"
 version = "0.1.0"
 authors = ["Jarle Kramer <jarle.kramer@gmail.com>"]
-description = "A derive crate for automatically setting up FMU models in Rust"
+description = "A derive macro for automatically setting up FMU models in Rust"
 homepage = "https://github.com/jarlekramer/fmu_from_struct"
 readme = "../README.md"
 repository = "https://github.com/jarlekramer/fmu_from_struct"
@@ -11,4 +11,4 @@ license_file = "../LICENSE"
 edition = "2021"
 
 [dependencies]
-fmu_from_struct_derive = { version = "0.1.0", path = "../fmu_from_struct_derive" }
+fmu_from_struct_derive = { version = "0.1.0"}

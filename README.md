@@ -1,5 +1,5 @@
 # fmu_from_struct
-A derive crate for automatically setting up FMU models in Rust
+A derive macro for automatically setting up FMU models in Rust
 
 ## Development Status
 **WARNING:** This crate is very much in development. Bugs can be expected in the current version and 
