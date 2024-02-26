@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "fmu_from_struct",
+    "fmu_from_struct_derive"
+]
+exclude = [
+    "examples",
+    "fmu_build_utils"
+]
+
+[patch.crates-io]
+fmu_from_struct = { path = "fmu_from_struct" }
+
+[workspace.dependencies]
+libc = "0.2.151"

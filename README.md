@@ -32,9 +32,8 @@ and this is still based on version 2. Version 3 is expected to be the main versi
 Check the `examples` folder for code examples on how to use this macro.
 
 ## Folder Structure
-- `fmu_from_struct` contains the overall interface to the rust functionality. That is: traits and 
-prelude imports.
-- `fmu_from_struct_derive` contains the derive macro itself
+- `fmu_from_struct` contains the high-level rust code for the macro (mainly prelude and traits)
+- `fmu_from_struct_derive` contains the derive macro
 - `examples` contains simple examples of how to use the macro
 - `fmu_build_utils` contains a Python script to take the result from `Cargo build` and package it to 
 an FMU zip file. This can also be done manually, but this script is intended to automate this task. 
