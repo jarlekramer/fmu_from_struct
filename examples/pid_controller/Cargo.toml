@@ -1,0 +1,10 @@
+[package]
+name = "pid_controller"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+fmu_from_struct = { path = "../../fmu_from_struct" }

@@ -1,0 +1,8 @@
+[package]
+name = "fmu_from_struct"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2.151"
+fmu_from_struct_derive = { path = "../fmu_from_struct_derive" }
