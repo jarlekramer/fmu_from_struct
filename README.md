@@ -28,14 +28,19 @@ often uses the [open simulation platform](https://opensimulationplatform.com/) t
 and this is still based on version 2. Version 3 is expected to be the main version in the future 
 (especially when the Open Simulation Platform changes its version)
 
+## Getting Started
+Check the `examples` folder for code examples on how to use this macro.
+
 ## Folder Structure
 - `fmu_from_struct` contains the overall interface to the rust functionality. That is: traits and 
 prelude imports.
 - `fmu_from_struct_derive` contains the derive macro itself
 - `examples` contains simple examples of how to use the macro
 - `fmu_build_utils` contains a Python script to take the result from `Cargo build` and package it to 
-an FMU zip file. **Note**: this functionality is likely to change in the future. Should probably 
-rather be an executable written in Rust, that can be installed by Cargo. 
+an FMU zip file. This can also be done manually, but this script is intended to automate this task. 
+**Note**: this functionality is likely to change in the future. Should probably rather be an 
+executable written in Rust, that can be installed by Cargo. Also, as of now, it only works for 
+Windows. Should be easy enough to fix for other platforms, but yet to be done.
 
 ## Contribute
 If you would like to contribute, that's great! Please contact the repository owner for an informal 
