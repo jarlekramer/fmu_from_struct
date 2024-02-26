@@ -8,6 +8,8 @@ exclude = [
     "fmu_build_utils"
 ]
 
+resolver = "2"
+
 [patch.crates-io]
 fmu_from_struct = { path = "fmu_from_struct" }
 
