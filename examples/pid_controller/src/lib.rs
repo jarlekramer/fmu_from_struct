@@ -12,7 +12,7 @@ pub struct PIDController {
     pub integral_gain: f64,
     pub max_value: f64,
     pub min_value: f64,
-    pub reverse_output: bool,
+    pub reverse_error_sign: bool,
     #[input]
     pub set_point: f64,
     pub input: f64,
@@ -25,10 +25,10 @@ pub struct PIDController {
 
 impl FmuFunctions for PIDController {
     fn do_step(&mut self, _current_time: f64, time_step: f64) {
-        let error = if self.reverse_output {
-            self.set_point - self.input 
-        } else {
+        let error = if self.reverse_error_sign {
             self.input - self.set_point
+        } else {
+            self.set_point - self.input
         };
 
         let error_derivative = (error - self.previous_error) / time_step;
@@ -59,7 +59,7 @@ impl FmuFunctions for PIDController {
         }
 
         if do_anti_windup {
-            self.integral_term -= (control_signal - self.output);
+            self.integral_term -= control_signal - self.output;
         }
 
         self.previous_error = error;
