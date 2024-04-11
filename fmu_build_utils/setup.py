@@ -15,6 +15,6 @@ setup(
     url="https://github.com/jarlekramer/fmu_from_struct",  
     author="Jarle Vinje Kramer", 
     author_email="jarlekramer@gmail.com",  
-    packages=find_namespace_packages(where="fmrs_build_utils"),
+    packages=find_namespace_packages(),
     python_requires=">=3.10, <4",
 )
