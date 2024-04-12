@@ -65,13 +65,18 @@ fn get_rust_types(fmi_version: FmiVersion) -> Vec<syn::Ident> {
 }
 
 
-// Enum to distinguish between getter and setter functions in the function signature
+/// Enum to distinguish between getter and setter functions in the function signature
 enum Access {
     Get,
     Set,
 }
 
 /// Generates function signature for getter and setter functions based on fmi version and field type
+/// 
+/// # Arguments
+/// * `fmi_version` - The FMI version. Can be FMI2 or FMI3
+/// * `field_type` - The type of the field to implement the get/set function for
+/// * `access` - The type of the function. Can be Get or Set
 fn function_signature(
     fmi_version: FmiVersion, 
     field_type: &syn::Ident, 
@@ -202,7 +207,7 @@ fn impl_get_function(
                         match input_value_reference {
                             #(
                                 #field_value_references => {
-                                    let value = instance.model.#field_names;
+                                    let value = instance.model.#field_names.clone();
 
                                     #get_value_at_index
                                 }
@@ -267,9 +272,7 @@ fn impl_set_function(
             },
             _ => {
                 quote! {
-                    let value = *values.offset(i as isize)
-
-                    
+                    let value = *values.offset(i as isize)                    
                 }
             }
         };
