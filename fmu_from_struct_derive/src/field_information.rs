@@ -118,7 +118,7 @@ impl FieldInformation {
         }
     }
 
-    /// Filters the fields based on the daat type. Used to get all the fields of a certain type in
+    /// Filters the fields based on the data type. Used to get all the fields of a certain type in
     /// the setter and getter functions
     pub fn filter_on_type(fields: &[Self], field_type: &syn::Ident) -> Vec<Self> {
         fields.iter()
@@ -235,7 +235,10 @@ impl FieldInformation {
             },
             "bool" => "Boolean".to_string(),
             "String" => "String".to_string(),
-            _ => panic!("From field_information.rs, get_fmi_type_name. Type not supported: {}", field_type.to_string()),
+            _ => panic!(
+                "From field_information.rs, get_fmi_type_name. Type not supported: {}", 
+                field_type.to_string()
+            ),
         }
     }
 

@@ -1,4 +1,4 @@
-//! Implements the getters and setters
+//! Implements the getters and setters for the variables in the FMI standard
 
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro2;
@@ -72,7 +72,11 @@ enum Access {
 }
 
 /// Generates function signature for getter and setter functions based on fmi version and field type
-fn get_function_signature(fmi_version: FmiVersion, field_type: &syn::Ident, access: Access) -> TokenStream2 {
+fn function_signature(
+    fmi_version: FmiVersion, 
+    field_type: &syn::Ident, 
+    access: Access
+) -> TokenStream2 {
     let access_type = match access {
         Access::Get => "Get",
         Access::Set => "Set",
@@ -85,15 +89,24 @@ fn get_function_signature(fmi_version: FmiVersion, field_type: &syn::Ident, acce
         FieldInformation::get_fmi_type_name(fmi_version, field_type)
     );
 
-    let c_field_tokens = if field_type.to_string() == "String" {
-        match access {
-            Access::Get => quote! { *mut *const ffi::c_char },
-            Access::Set => quote! { *const *const ffi::c_char },
-        }
-    } else {
-        match access {
-            Access::Get => quote! { *mut #field_type },
-            Access::Set => quote! { *const #field_type },
+    let c_field_tokens = match field_type.to_string().as_str() {
+        "String" => {
+            match access {
+                Access::Get => quote! { *mut *const ffi::c_char },
+                Access::Set => quote! { *const *const ffi::c_char },
+            }
+        },
+        "bool" => {
+            match access {
+                Access::Get => quote! { *mut i32 },
+                Access::Set => quote! { *const i32 },
+            }
+        },
+        _ => {
+            match access {
+                Access::Get => quote! { *mut #field_type },
+                Access::Set => quote! { *const #field_type },
+            }
         }
     };
 
@@ -122,13 +135,21 @@ fn get_function_signature(fmi_version: FmiVersion, field_type: &syn::Ident, acce
     }
 }
 
+
+/// Implements the getter function for a specific field type
+/// 
+/// # Arguments
+/// * `fmi_version` - The FMI version. Can be FMI2 or FMI3
+/// * `name` - The name of the struct that contains the model
+/// * `all_fields` - A list of all fields in the struct
+/// * `field_type` - The type of the field to implement the getter for
 fn impl_get_function(
     fmi_version: FmiVersion, 
     name: &syn::Ident, 
     all_fields: &[FieldInformation], 
     field_type: &syn::Ident
 ) -> TokenStream2 {
-    let function_signature = get_function_signature(fmi_version, field_type, Access::Get);
+    let function_signature = function_signature(fmi_version, field_type, Access::Get);
 
     let filtered_fields = FieldInformation::filter_on_type(all_fields, field_type);
 
@@ -141,70 +162,79 @@ fn impl_get_function(
             }
         }
     } else {
-        let field_names            = filtered_fields.iter().map(|field| &field.name);
+        let field_names = filtered_fields.iter().map(|field| &field.name);
         let field_value_references = filtered_fields.iter().map(|field| field.value_reference);
 
-        if field_type.to_string() == "String" {
-            quote! {
-                #function_signature {
-                    unsafe {
-                        #instance_tokens;
-    
-                        for i in 0..n_value_references {
-                            let input_value_reference = *value_references.offset(i as isize) as usize;
-    
-                            match input_value_reference {
-                                #(
-                                    #field_value_references => {
-                                        let rust_string = instance.model.#field_names.clone();
+        let get_value_at_index = match field_type.to_string().as_str() {
+            "String" => {
+                quote! {
+                    let rust_string = value.clone();
 
-                                        let c_string = ffi::CString::new(rust_string).unwrap();
+                    let c_string = ffi::CString::new(rust_string).unwrap();
 
-                                        *values.offset(i as isize) = c_string.into_raw();
-                                    }
-                                )*
-                                _ => {panic!("Unknown value reference: {}", input_value_reference)} // Consider changing this to return an error
-                            }
-                        }
-                    }
-                    
-                    FmiStatus::Ok
-                }   
-            }
-        } else {
-            quote! {
-                #function_signature {
-                    unsafe {
-                        #instance_tokens;
-    
-                        for i in 0..n_value_references {
-                            let input_value_reference = *value_references.offset(i as isize) as usize;
-    
-                            match input_value_reference {
-                                #(
-                                    #field_value_references => {
-                                        *values.offset(i as isize) = instance.model.#field_names;
-                                    }
-                                )*
-                                _ => {panic!("Unknown value reference: {}", input_value_reference)} // Consider changing this to return an error
-                            }
-                        }
-                    }
-                    
-                    FmiStatus::Ok
+                    *values.offset(i as isize) = c_string.into_raw();
                 }
+            },
+            "bool" => {
+                quote! {
+                    *values.offset(i as isize) = if value {
+                        1
+                    } else {
+                        0
+                    };
+                }
+            },
+            _ => {
+                quote! {
+                    *values.offset(i as isize) = value;
+                }
+            }
+        };
+
+        quote! {
+            #function_signature {
+                unsafe {
+                    #instance_tokens;
+
+                    for i in 0..n_value_references {
+                        let input_value_reference = *value_references.offset(i as isize) as usize;
+
+                        match input_value_reference {
+                            #(
+                                #field_value_references => {
+                                    let value = instance.model.#field_names;
+
+                                    #get_value_at_index
+                                }
+                            )*
+                            _ => {
+                                // Consider changing this to return an error
+                                panic!("Unknown value reference: {}", input_value_reference)
+                            } 
+                        }
+                    }
+                }
+                
+                FmiStatus::Ok
             }
         }
     }
 }
 
+/// Implements the setter function for a specific field type
+/// 
+/// # Arguments
+/// * `fmi_version` - The FMI version. Can be FMI2 or FMI3
+/// * `name` - The name of the struct that contains the model
+/// * `all_fields` - A list of all fields in the struct
+/// * `field_type` - The type of the field to implement the getter for
 fn impl_set_function(
     fmi_version: FmiVersion, 
     name: &syn::Ident, 
     all_fields: &[FieldInformation], 
     field_type: &syn::Ident
 ) -> TokenStream2 {   
-    let function_signature = get_function_signature(fmi_version, field_type, Access::Set);
+    let function_signature = function_signature(fmi_version, field_type, Access::Set);
 
     let filtered_fields = FieldInformation::filter_on_type(all_fields, field_type);
 
@@ -217,20 +247,30 @@ fn impl_set_function(
             }
         }
     } else {
-        let field_names            = filtered_fields.iter().map(|field| &field.name);
+        let field_names = filtered_fields.iter().map(|field| &field.name);
         let field_value_references = filtered_fields.iter().map(|field| field.value_reference);
 
-        let set_value_at_index = if field_type.to_string() == "String" {
-            quote! {
-                let c_str: &ffi::CStr = ffi::CStr::from_ptr(*values.offset(i as isize));
+        let set_value_at_index = match field_type.to_string().as_str() {
+            "String" => {
+                quote! {
+                    let c_str: &ffi::CStr = ffi::CStr::from_ptr(*values.offset(i as isize));
 
-                let rust_string: String = c_str.to_string_lossy().into_owned();
-            
-                let value = rust_string
-            }
-        } else {
-            quote! {
-                let value = *values.offset(i as isize)
+                    let rust_string: String = c_str.to_string_lossy().into_owned();
+                
+                    let value = rust_string
+                }
+            },
+            "bool" => {
+                quote! {
+                    let value = *values.offset(i as isize) != 0;
+                }
+            },
+            _ => {
+                quote! {
+                    let value = *values.offset(i as isize)
+
+                    
+                }
             }
         };
 
@@ -247,10 +287,13 @@ fn impl_set_function(
                                 #field_value_references => {
                                     #set_value_at_index;
 
-                                    instance.model.#field_names = value;
+                                    instance.model.#field_names = value;                               
                                 }
                             )*
-                            _ => {panic!("Unknown value reference: {}", input_value_reference)} // Consider changing this to return an error
+                            _ => {
+                                // Consider changing this to return an error
+                                panic!("Unknown value reference: {}", input_value_reference)
+                            } 
                         }
                     }
                 }
