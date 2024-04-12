@@ -2,7 +2,7 @@
 //! Placeholder for functions not yet properly implemented in the derive macro.
 //! 
 //! At least some fmu-simulators require all functions in the fmi standard to have an implementation,
-//! even though they may not be used. For instance, running a co-simualtion does not really need all 
+//! even though they may not be used. For instance, running a co-simulation does not really need all 
 //! the model exchange functions, but it is impossible to load an fmu in fmpy without them.
 //! 
 //! This module therefore implements dummy versions for missing functions, so that the fmu can be 
