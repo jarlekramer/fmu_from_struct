@@ -1,6 +1,6 @@
 //! Module for generating the code for "model management" functions. This means the following:
 //! - initialization of the model before the parameters are read from the model description
-//! - udating the model with the parameters from the model description
+//! - updating the model with the parameters from the model description
 //! - freeing the model when the simulation is done
 
 use proc_macro2::TokenStream as TokenStream2;

@@ -7,6 +7,7 @@ pub use fmu_from_struct::prelude::*;
 /// Source: <https://en.wikipedia.org/wiki/Proportional%E2%80%93integral%E2%80%93derivative_controller>
 pub struct PIDController {
     #[parameter]
+    #[fmu_default(1.0)]
     pub proportional_gain: f64,
     pub derivative_gain: f64,
     pub integral_gain: f64,

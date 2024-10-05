@@ -1,10 +1,12 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Enum to store the FMI version
 pub enum FmiVersion {
     Fmi2,
     Fmi3,
 }
 
 impl FmiVersion {
+    /// Parse the FMI version from the input
     pub fn parse(input: &syn::DeriveInput) -> Self {
         let mut fmi_version = Self::Fmi3;
         

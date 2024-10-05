@@ -6,7 +6,11 @@ use std::io::{Write, Error};
 
 use uuid::Uuid;
 
-use super::field_information::{FieldInformation, Causality};
+use super::field_information::{
+    FieldInformation, 
+    causality::Causality
+};
+
 use super::fmi_version::FmiVersion;
 
 /// Parses the struct and writes a fmi model description based on the variables.

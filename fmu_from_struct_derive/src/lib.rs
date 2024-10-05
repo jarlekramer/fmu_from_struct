@@ -12,12 +12,13 @@ mod get_and_set;
 mod do_step;
 mod fmi_version;
 mod state_management;
+mod default;
 
 use field_information::FieldInformation;
 use fmi_version::FmiVersion;
 
 
-#[proc_macro_derive(Fmu, attributes(fmi_version, parameter, input, output))]
+#[proc_macro_derive(Fmu, attributes(fmi_version, parameter, input, output, fmu_default))]
 pub fn fmu_from_struct_derive(input: TokenStream) -> TokenStream { 
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
     
