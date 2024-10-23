@@ -1,7 +1,7 @@
 use std::env;
 use std::fs::File;
-use std::path::{Path, PathBuf};
-use zip::write::FileOptions;
+use std::path::PathBuf;
+use zip::write::SimpleFileOptions;
 use zip::ZipWriter;
 use xmltree::Element;
 
@@ -14,16 +14,14 @@ use errors::PackageFmuError;
 enum OperatingSystem {
     Windows,
     Linux,
-    MacOS,
 }
 
 impl OperatingSystem {
     fn from_string(input: &str) -> Result<Self, PackageFmuError> {
         match input {
-            "Windows" => Ok(OperatingSystem::Windows),
-            "Linux" => Ok(OperatingSystem::Linux),
-            "Darwin" => Ok(OperatingSystem::MacOS),
-            _ => Err(PackageFmuError::InvalidOs),
+            "windows" => Ok(OperatingSystem::Windows),
+            "linux" => Ok(OperatingSystem::Linux),
+            _ => Err(PackageFmuError::InvalidOs(input.to_string())),
         }
     }
 
@@ -36,14 +34,12 @@ impl OperatingSystem {
 fn get_bin_folder_path(fmi_version: i32, os: &OperatingSystem) -> Result<PathBuf, PackageFmuError> {
     match fmi_version {
         2 => match os {
-            OperatingSystem::Windows => Ok(PathBuf::from("binaries/win64")),
-            OperatingSystem::Linux => Ok(PathBuf::from("binaries/linux64")),
-            _ => Err(PackageFmuError::InvalidOs),
+            OperatingSystem::Windows => Ok(PathBuf::from("binaries/win64/")),
+            OperatingSystem::Linux => Ok(PathBuf::from("binaries/linux64/")),
         },
         3 => match os {
-            OperatingSystem::Windows => Ok(PathBuf::from("binaries/x86_64-windows")),
-            OperatingSystem::Linux => Ok(PathBuf::from("binaries/x86_64-linux")),
-            _ => Err(PackageFmuError::InvalidOs),
+            OperatingSystem::Windows => Ok(PathBuf::from("binaries/x86_64-windows/")),
+            OperatingSystem::Linux => Ok(PathBuf::from("binaries/x86_64-linux/")),
         },
         _ => Err(PackageFmuError::InvalidFmiVersion),
     }
@@ -82,10 +78,10 @@ fn main() -> Result<(), PackageFmuError> {
         .to_string();
 
     let builder_path = if release {
-        println!("Package a release build");
+        println!("Making the release build into an FMU");
         PathBuf::from("target/release")
     } else {
-        println!("Package a debug build");
+        println!("Making the debug build into an FMU");
         PathBuf::from("target/debug")
     };
 
@@ -93,12 +89,16 @@ fn main() -> Result<(), PackageFmuError> {
         return Err(PackageFmuError::NoBuilderPath);
     }
 
-    let archive_path = PathBuf::from(format!("{}.fmu", model_name));
-    let file = File::create(&archive_path)?;
+    let fmu_path = PathBuf::from(format!("{}.fmu", model_name));
+    let fmu_file = File::create(&fmu_path)?;
+
+    let mut zip = ZipWriter::new(fmu_file);
+
+    let zip_options = SimpleFileOptions::default()
+        .unix_permissions(0o755);
+
+    zip.start_file("modelDescription.xml", zip_options)?;
     
-    /*
-    let mut zip: ZipWriter<File> = ZipWriter::new(file);
-    zip.start_file("modelDescription.xml", FileOptions::default())?;
     
     let mut f = File::open("modelDescription.xml")?;
     std::io::copy(&mut f, &mut zip)?;
@@ -107,7 +107,7 @@ fn main() -> Result<(), PackageFmuError> {
         OperatingSystem::Windows => {
             zip.start_file(
                 bin_folder.join(format!("{}.dll", model_name)).to_str().unwrap(),
-                FileOptions::default(),
+                zip_options,
             )?;
 
             let mut f = File::open(builder_path.join(format!("{}.dll", current_folder_name)))?;
@@ -115,21 +115,21 @@ fn main() -> Result<(), PackageFmuError> {
 
             zip.start_file(
                 bin_folder.join(format!("{}.lib", model_name)).to_str().unwrap(),
-                FileOptions::default(),
+                zip_options,
             )?;
             let mut f = File::open(builder_path.join(format!("{}.dll.lib", current_folder_name)))?;
             std::io::copy(&mut f, &mut zip)?;
 
             zip.start_file(
                 bin_folder.join(format!("{}.exp", model_name)).to_str().unwrap(),
-                FileOptions::default(),
+                zip_options,
             )?;
             let mut f = File::open(builder_path.join(format!("{}.dll.exp", current_folder_name)))?;
             std::io::copy(&mut f, &mut zip)?;
 
             zip.start_file(
                 bin_folder.join(format!("{}.pdb", model_name)).to_str().unwrap(),
-                FileOptions::default(),
+                zip_options,
             )?;
             let mut f = File::open(builder_path.join(format!("{}.pdb", current_folder_name)))?;
             std::io::copy(&mut f, &mut zip)?;
@@ -139,16 +139,14 @@ fn main() -> Result<(), PackageFmuError> {
 
             zip.start_file(
                 bin_folder.join(format!("{}.so", model_name)).to_str().unwrap(),
-                FileOptions::default(),
+                zip_options,
             )?;
             let mut f = File::open(shared_lib_path)?;
             std::io::copy(&mut f, &mut zip)?;
         }
-        _ => return Err(PackageFmuError::InvalidOs),
     }
 
     zip.finish()?;
-     */
 
     Ok(())
 }

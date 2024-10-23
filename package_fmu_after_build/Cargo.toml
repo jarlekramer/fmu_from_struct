@@ -1,6 +1,11 @@
 [package]
 name = "package_fmu_after_build"
 version = "0.1.0"
+authors = ["Jarle Kramer <jarle.kramer@gmail.com>"]
+description = "A simple program that takes the result from a fmu_from_struct build and pakackes it as an FMU"
+readme = "README.md"
+license = "MIT"
+license_file = "../LICENSE"
 edition = "2021"
 
 [dependencies]

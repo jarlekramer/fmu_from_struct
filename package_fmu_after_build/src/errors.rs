@@ -14,7 +14,7 @@ pub enum PackageFmuError {
     NoFmiVersionInModelDescription,
     NoModelNameInModelDescription,
     InvalidFmiVersion,
-    InvalidOs,
+    InvalidOs(String),
     NoBuilderPath,
     ZipError,
     Other(String),
@@ -65,8 +65,8 @@ impl Display for PackageFmuError {
             PackageFmuError::InvalidFmiVersion => write!(
                 f, "Invalid fmiVersion"
             ),
-            PackageFmuError::InvalidOs => write!(
-                f, "Invalid OS"
+            PackageFmuError::InvalidOs(os_string) => write!(
+                f, "Invalid OS: {}", os_string
             ),
             PackageFmuError::NoBuilderPath => write!(
                 f, "The build folder does not exist. Have you executed 'cargo build' and specified the correct build type for this script (release or not)?"
