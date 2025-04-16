@@ -1,6 +1,5 @@
 //! Implements the `do_step` function for the generated FMU struct.
 
-
 use proc_macro2::TokenStream as TokenStream2;
 
 use quote::quote;
@@ -44,7 +43,7 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
             unsafe {
                 #instance_tokens;
 
-                instance.model.do_step(current_communication_point, communication_step_size);
+                instance.do_step(current_communication_point, communication_step_size);
             }
             
             FmiStatus::Ok

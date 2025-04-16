@@ -1,6 +1,14 @@
 pub mod fmi_types;
 pub mod unimplemented_functions;
 
+use std::path::PathBuf;
+
+#[derive(Debug, Default, Clone)]
+pub struct FmuInfo {
+    pub name: String,
+    pub resource_path: PathBuf,
+}
+
 
 pub trait FmuFunctions {
     /// Steps the simulation forward in time. Necessary for all models.
@@ -15,10 +23,14 @@ pub trait FmuFunctions {
 
 pub mod prelude {
     pub use std::ffi;
+    pub use std::path::PathBuf;
     pub use super::fmi_types::fmi3::*;
     pub use super::fmi_types::fmi2::*;
     pub use super::fmi_types::common::*;
     pub use super::unimplemented_functions::*;
     pub use super::FmuFunctions;
     pub use fmu_from_struct_derive::Fmu;
+    pub use super::FmuInfo;
+    
+    pub use log;
 }

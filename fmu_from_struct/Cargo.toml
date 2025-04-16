@@ -11,4 +11,5 @@ license_file = "../LICENSE"
 edition = "2021"
 
 [dependencies]
-fmu_from_struct_derive = { version = "0.1.1" }
+fmu_from_struct_derive = { path = "../fmu_from_struct_derive"}
+log = "0.4.27"

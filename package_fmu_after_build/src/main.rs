@@ -146,6 +146,8 @@ fn main() -> Result<(), PackageFmuError> {
         }
     }
 
+    zip.add_directory("resources/", zip_options)?;
+
     zip.finish()?;
 
     Ok(())

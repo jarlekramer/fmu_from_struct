@@ -207,7 +207,7 @@ fn impl_get_function(
                         match input_value_reference {
                             #(
                                 #field_value_references => {
-                                    let value = instance.model.#field_names.clone();
+                                    let value = instance.#field_names.clone();
 
                                     #get_value_at_index
                                 }
@@ -290,7 +290,7 @@ fn impl_set_function(
                                 #field_value_references => {
                                     #set_value_at_index;
 
-                                    instance.model.#field_names = value;                               
+                                    instance.#field_names = value;                               
                                 }
                             )*
                             _ => {

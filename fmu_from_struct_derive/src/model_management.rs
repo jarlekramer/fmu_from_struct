@@ -1,6 +1,6 @@
 //! Module for generating the code for "model management" functions. This means the following:
 //! - initialization of the model before the parameters are read from the model description
-//! - udating the model with the parameters from the model description
+//! - updating the model with the parameters from the model description
 //! - freeing the model when the simulation is done
 
 use proc_macro2::TokenStream as TokenStream2;
@@ -9,30 +9,27 @@ use quote::quote;
 use syn;
 
 use crate::fmi_version::FmiVersion;
-use crate::superstructure::get_superstructure_name;
 
 pub fn get_instance(structure_name: &syn::Ident) -> TokenStream2 {
-    let superstructre_name = get_superstructure_name(structure_name);
-
     quote! {
-        let instance: &mut #superstructre_name = &mut *(instance_ptr as *mut #superstructre_name);
+        let instance: &mut #structure_name = &mut *(instance_ptr as *mut #structure_name);
     }
 }
 
-pub fn impl_init_functions(fmi_version: FmiVersion, model_name: &syn::Ident) -> TokenStream2 {
-    let instanciate_tokens = impl_instantiate(fmi_version, model_name);
+pub fn impl_init_functions(fmi_version: FmiVersion, model_name: &syn::Ident, fmu_info_field_name: Option<syn::Ident>) -> TokenStream2 {
+    let instantiate_tokens = impl_instantiate(fmi_version, model_name, fmu_info_field_name);
     let enter_tokens = impl_enter_initialization_mode(fmi_version);
     let exit_tokens = impl_exit_initialization_mode(fmi_version, model_name);
 
     quote! {
-        #instanciate_tokens
+        #instantiate_tokens
         #enter_tokens
         #exit_tokens
     }
 }
 
 /// First initialization the model, before the parameters are read from the model description.
-fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> TokenStream2 {
+fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_info_field_name: Option<syn::Ident>) -> TokenStream2 {
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => quote! { 
             #[no_mangle]
@@ -41,7 +38,7 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
                 instance_name: *const ffi::c_char,
                 _fmu_type: fmi2Type,
                 _fmu_guid: *const ffi::c_char,
-                _fmu_resource_location: *const ffi::c_char,
+                resource_path: *const ffi::c_char,
                 _functions: fmi2CallbackFunctions,
                 _visible: bool,
                 _logging_on: bool,
@@ -53,7 +50,7 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
             pub extern "C" fn fmi3InstantiateCoSimulation(
                 instance_name: *const ffi::c_char,
                 _instantiation_token: *const ffi::c_char,
-                _resource_path: *const ffi::c_char,
+                resource_path: *const ffi::c_char,
                 _visible: bool,
                 _logging_on: bool,
                 _event_mode_used: bool,
@@ -67,20 +64,39 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
         },
     };
 
-    let superstructre_name = get_superstructure_name(structure_name);
+    let fmu_info_code = if let Some(field_name) = fmu_info_field_name {
+        quote! {
+            let resource_path_string: String = ffi::CStr::from_ptr(resource_path)
+                .to_string_lossy()
+                .into_owned();
+
+                let resource_path_string = resource_path_string
+                .strip_prefix("file:///")
+                .unwrap_or(&resource_path_string)
+                .to_string();
+
+            let resource_path_buf: PathBuf = PathBuf::from(resource_path_string);
+
+            instance.#field_name = FmuInfo {
+                name: instance_name,
+                resource_path: resource_path_buf,
+            };
+        }
+    } else {
+        quote! {}
+    };
     
     quote! {
         #function_signature {
             unsafe {
                 let instance_name: String = ffi::CStr::from_ptr(instance_name).to_string_lossy().into_owned();
-
+                
                 // The box is needed to avoid the model to be dropped when it goes out of scope.
                 let mut instance = Box::new(
-                    #superstructre_name {
-                        instance_name,
-                        model: #structure_name::default(),
-                    }
+                    #structure_name::default()
                 );
+
+                #fmu_info_code
 
                 let ptr = Box::into_raw(instance) as *mut _;
 
@@ -136,7 +152,7 @@ fn impl_exit_initialization_mode(fmi_version: FmiVersion, structure_name: &syn::
             unsafe {
                 #instance_tokens;
 
-                instance.model.exit_initialization_mode();
+                instance.exit_initialization_mode();
             }
 
             FmiStatus::Ok

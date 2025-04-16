@@ -1,4 +1,4 @@
-//! Module to analyze the fields in the strut in the context of the FMI standard.
+//! Module to analyze the fields in the struct in the context of the FMI standard.
 //! 
 //! The purpose is to extract fields that should be exposed as an FMI variable, and to determine
 //! what type of variable it is. The type is both the data type and causality, i.e., input, output, 
@@ -95,6 +95,11 @@ impl FieldInformation {
                                     },
                                     _ => unimplemented!("A field in the struct seems to have an unsupported type"),
                                 };
+
+                                // Skipping FmuInfo field
+                                if field_type == "FmuInfo" {
+                                    continue;
+                                }
 
                                 let field_information = FieldInformation {
                                     name: field.ident.clone().unwrap(),
