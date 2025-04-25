@@ -70,10 +70,12 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_in
                 .to_string_lossy()
                 .into_owned();
 
-                let resource_path_string = resource_path_string
-                .strip_prefix("file:///")
-                .unwrap_or(&resource_path_string)
-                .to_string();
+            let resource_path_string = resource_path_string
+            .strip_prefix("file:///")
+            .unwrap_or(&resource_path_string)
+            .to_string();
+
+            let resource_path_string = resource_path_string.replace("/", "\\");
 
             let resource_path_buf: PathBuf = PathBuf::from(resource_path_string);
 
