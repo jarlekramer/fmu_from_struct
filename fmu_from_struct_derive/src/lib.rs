@@ -59,8 +59,8 @@ fn impl_fmi_version(fmi_version: FmiVersion) -> TokenStream2 {
     };
 
     let fmi_version_token = match fmi_version {
-        FmiVersion::Fmi2 => quote! { "2.0" },
-        FmiVersion::Fmi3 => quote! { "3.0" },
+        FmiVersion::Fmi2 => quote! { "2.0\0" },
+        FmiVersion::Fmi3 => quote! { "3.0\0" },
     };
 
     let version_tokens =  quote! {
@@ -76,7 +76,7 @@ fn impl_fmi_version(fmi_version: FmiVersion) -> TokenStream2 {
             #[no_mangle]
             #[allow(non_snake_case)]
             pub extern "C" fn fmi2GetTypesPlatform() -> *const ffi::c_char {
-                "default".as_ptr() as *const ffi::c_char
+                "default\0".as_ptr() as *const ffi::c_char
             }
         }
     } else {

@@ -29,7 +29,7 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
     write!(file, "    fmiVersion=\"{}\"\n", fmi_version.to_model_description_string())?;
     write!(file, "    modelName=\"{}\"\n", name)?;
     write!(file, "    description=\"to come\"\n")?;
-    write!(file, "    generationTool=\"The FmrsModel macro for automatic fmi generation for rust structs\"\n")?;
+    write!(file, "    generationTool=\"The fmu_from_struct macro for automatic fmi generation for rust structs\"\n")?;
     write!(file, "    {}=\"{}\"\n", id_string, id)?;
     write!(file, ">\n")?;
 
@@ -55,7 +55,7 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
     match fmi_version {
         FmiVersion::Fmi2 => {
             write!(file, "    <Outputs>\n")?;
-            for vr in outputs {
+            for vr in &outputs {
                 write!(
                     file, 
                     "        <Unknown index=\"{}\"/>\n", 
@@ -63,6 +63,17 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
                 )?;
             }
             write!(file, "    </Outputs>\n")?;
+
+            write!(file, "    <InitialUnknowns>\n")?;
+            for vr in &outputs {
+                write!(
+                    file, 
+                    "        <Unknown index=\"{}\"/>\n", 
+                    vr,
+                )?;
+            }
+
+            write!(file, "    </InitialUnknowns>\n")?;
         },
         FmiVersion::Fmi3 => {
             for vr in outputs {
