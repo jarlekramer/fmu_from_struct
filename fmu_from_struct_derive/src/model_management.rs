@@ -17,14 +17,16 @@ pub fn get_instance(structure_name: &syn::Ident) -> TokenStream2 {
 }
 
 pub fn impl_init_functions(fmi_version: FmiVersion, model_name: &syn::Ident, fmu_info_field_name: Option<syn::Ident>) -> TokenStream2 {
-    let instantiate_tokens = impl_instantiate(fmi_version, model_name, fmu_info_field_name);
+    let instantiate_tokens = impl_instantiate(fmi_version, model_name, fmu_info_field_name.clone());
     let enter_tokens = impl_enter_initialization_mode(fmi_version);
     let exit_tokens = impl_exit_initialization_mode(fmi_version, model_name);
+    let reset_tokes = impl_reset(fmi_version, model_name, fmu_info_field_name.clone());
 
     quote! {
         #instantiate_tokens
         #enter_tokens
         #exit_tokens
+        #reset_tokes
     }
 }
 
@@ -71,9 +73,9 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_in
                 .into_owned();
 
             let resource_path_string = resource_path_string
-            .strip_prefix("file:///")
-            .unwrap_or(&resource_path_string)
-            .to_string();
+                .strip_prefix("file:///")
+                .unwrap_or(&resource_path_string)
+                .to_string();
 
             let resource_path_string = resource_path_string.replace("/", "\\");
 
@@ -182,6 +184,52 @@ pub fn impl_free_instance(fmi_version: FmiVersion, structure_name: &syn::Ident) 
                 let _box = Box::from_raw(instance);
                 // _box is dropped here and memory is deallocated
             }
+        }
+    }
+}
+
+/// Reset the model if necessary
+pub fn impl_reset(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_info_field_name: Option<syn::Ident>) -> TokenStream2 {
+    let function_name = match fmi_version {
+        FmiVersion::Fmi2 => quote! { fmi2Reset },
+        FmiVersion::Fmi3 => quote! { fmi3Reset },
+    };
+
+    let instance_tokens = get_instance(structure_name);
+
+    let fmu_info_clone_tokens = if let Some(field_name) = &fmu_info_field_name {
+        quote! {let fmu_info = instance.#field_name.clone() }
+    } else {
+        quote! {}
+    };
+
+    let fmu_info_set_tokens = if let Some(field_name) = &fmu_info_field_name {
+        quote! {
+            instance.#field_name = fmu_info
+        }
+    } else {
+        quote! {}
+    };
+
+    quote! {
+        #[no_mangle]
+        #[allow(non_snake_case)]
+        pub unsafe extern "C" fn #function_name(instance_ptr: *mut ffi::c_void) -> FmiStatus {
+            if instance_ptr.is_null() {
+                return FmiStatus::Error;
+            }
+
+            #instance_tokens;
+
+            #fmu_info_clone_tokens;
+
+            let new_structure = #structure_name::default();
+
+            *instance = new_structure;
+
+            #fmu_info_set_tokens;
+
+            FmiStatus::Ok
         }
     }
 }
