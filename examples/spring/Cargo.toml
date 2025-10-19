@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-fmu_from_struct = { path = "../../fmu_from_struct" }
+fmu_from_struct = { version = "0.1.2" }
 
 [features]
 default = ["fmi2"]  # Default to FMI version 2
