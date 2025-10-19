@@ -2,12 +2,12 @@
 
 pub use fmu_from_struct::prelude::*;
 
-/// The actual spring model. The FMU is implemented as an interface to this model. Not strictly 
+/// The actual spring model. The FMU is implemented as an interface to this model. Not strictly
 /// speaking necessary for this simple example, but this design pattern is often useful for more
-/// complex cases. 
+/// complex cases.
 #[derive(Debug, Default, Clone)]
 struct SpringModel {
-    mass: f64, 
+    mass: f64,
     stiffness: f64,
     damping: f64,
     external_force: f64,
@@ -17,7 +17,7 @@ struct SpringModel {
 }
 
 impl SpringModel {
-    /// The do step function which calculates the next acceleration, velocity and position based on 
+    /// The do step function which calculates the next acceleration, velocity and position based on
     /// the current state of the model and the time step
     fn do_step(&mut self, time_step: f64) {
         let force = self.external_force - self.stiffness * self.position - self.damping * self.velocity;
@@ -33,8 +33,13 @@ impl SpringModel {
     }
 }
 
+// Ensure only one version is selected
+#[cfg(all(feature = "fmi2", feature = "fmi3"))]
+compile_error!("Features 'fmi2' and 'fmi3' are mutually exclusive. Please select only one.");
+
 #[derive(Fmu, Default, Debug, Clone)]
-#[fmi_version = 2]
+#[cfg_attr(feature = "fmi2", fmi_version = 2)]
+#[cfg_attr(feature = "fmi3", fmi_version = 3)]
 pub struct Spring {
     #[parameter]  // Every variable below this attribute will be a parameter.
     pub mass: f64,
@@ -47,15 +52,15 @@ pub struct Spring {
     pub velocity: f64,
     pub acceleration: f64,
 
-    /// Optional field to store the fmu info. This field is not necessary to add, and not used in 
-    /// this case. The macro will populate the struct fields automatically with information about 
-    /// the FMU that is generated during run time (e.g., resource path, name, etc.). This can be 
-    /// useful for debugging and logging purposes, and if some parameters would like to use the 
+    /// Optional field to store the fmu info. This field is not necessary to add, and not used in
+    /// this case. The macro will populate the struct fields automatically with information about
+    /// the FMU that is generated during run time (e.g., resource path, name, etc.). This can be
+    /// useful for debugging and logging purposes, and if some parameters would like to use the
     /// resource path for some reason (e.g., load files using relative paths to the FMU location).
     pub fmu_info: FmuInfo,
 
     /// The model which gets an interface
-    /// The option type is necessary as default values are required for the FMI interface. 
+    /// The option type is necessary as default values are required for the FMI interface.
     /// Otherwise, it is impossible to initialize the model before parameters are set.
     spring_model: Option<SpringModel>,
 }
@@ -63,12 +68,6 @@ pub struct Spring {
 impl FmuFunctions for Spring {
     /// Initialize the model after the fmi interface variables has been read and set.
     fn exit_initialization_mode(&mut self) {
-        // Example of how to use the fmu_info field. This is not necessary, just for demonstration.
-        env_logger::init();
-        
-        log::info!("Resource path: {:?}", self.fmu_info.resource_path);
-        log::info!("Resource path exists: {:?}", self.fmu_info.resource_path.exists());
-
         // Initialize the model with the parameters set in the fmi interface.
         self.spring_model = Some(
             SpringModel {

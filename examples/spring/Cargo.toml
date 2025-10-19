@@ -7,5 +7,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-env_logger = "0.11.8"
 fmu_from_struct = { path = "../../fmu_from_struct" }
+
+[features]
+default = ["fmi2"]  # Default to FMI version 2
+fmi2 = []
+fmi3 = []

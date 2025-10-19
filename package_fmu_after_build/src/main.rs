@@ -98,8 +98,8 @@ fn main() -> Result<(), PackageFmuError> {
         .unix_permissions(0o755);
 
     zip.start_file("modelDescription.xml", zip_options)?;
-    
-    
+
+
     let mut f = File::open("modelDescription.xml")?;
     std::io::copy(&mut f, &mut zip)?;
 

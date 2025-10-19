@@ -10,7 +10,11 @@ use super::field_information::{FieldInformation, Causality};
 use super::fmi_version::FmiVersion;
 
 /// Parses the struct and writes a fmi model description based on the variables.
-pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &Vec<FieldInformation>) -> Result<(), Error>  {
+pub fn generate_model_description(
+    fmi_version: FmiVersion,
+    name: &str,
+    fields: &Vec<FieldInformation>
+) -> Result<(), Error>  {
     let id = Uuid::new_v4();
 
     let path = "modelDescription.xml";
@@ -39,6 +43,10 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
 
     write!(file, "<ModelVariables>\n")?;
 
+    if fmi_version == FmiVersion::Fmi3 {
+        write!(file, "    <Float64 name=\"time\" valueReference=\"0\" causality=\"independent\" variability=\"continuous\"/>\n")?;
+    }
+
     for field in fields {
         write!(file, "{}", field.model_description_string(fmi_version))?;
     }
@@ -55,20 +63,38 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
     match fmi_version {
         FmiVersion::Fmi2 => {
             write!(file, "    <Outputs>\n")?;
-            for vr in outputs {
+            for vr in &outputs {
                 write!(
-                    file, 
-                    "        <Unknown index=\"{}\"/>\n", 
+                    file,
+                    "        <Unknown index=\"{}\"/>\n",
                     vr,
                 )?;
             }
             write!(file, "    </Outputs>\n")?;
+
+            write!(file, "   <InitialUnknowns>\n")?;
+            for vr in &outputs {
+                write!(
+                    file,
+                    "        <Unknown index=\"{}\"/>\n",
+                    vr,
+                )?;
+            }
+            write!(file, "   </InitialUnknowns>\n")?;
         },
         FmiVersion::Fmi3 => {
-            for vr in outputs {
+            for vr in &outputs {
                 write!(
-                    file, 
-                    "        <Output valueReference=\"{}\"/>\n", 
+                    file,
+                    "        <Output valueReference=\"{}\"/>\n",
+                    vr,
+                )?;
+            }
+
+            for vr in &outputs {
+                write!(
+                    file,
+                    "        <InitialUnknown valueReference=\"{}\"/>\n",
                     vr,
                 )?;
             }
@@ -76,7 +102,7 @@ pub fn generate_model_description(fmi_version: FmiVersion, name: &str, fields: &
     }
 
     write!(file, "</ModelStructure>\n\n")?;
-    
+
     // ------------------------- End ---------------------------------------------------------------
 
     write!(file, "</fmiModelDescription>\n")?;

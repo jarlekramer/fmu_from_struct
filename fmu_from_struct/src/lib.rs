@@ -14,8 +14,8 @@ pub trait FmuFunctions {
     /// Steps the simulation forward in time. Necessary for all models.
     fn do_step(&mut self, current_time: f64, time_step: f64);
 
-    /// Can be used to set internal (private) variables based on parameters from the model 
-    /// description file. 
+    /// Can be used to set internal (private) variables based on parameters from the model
+    /// description file.
     fn exit_initialization_mode(&mut self) {
         // Do nothing by default
     }
@@ -31,6 +31,4 @@ pub mod prelude {
     pub use super::FmuFunctions;
     pub use fmu_from_struct_derive::Fmu;
     pub use super::FmuInfo;
-    
-    pub use log;
 }
