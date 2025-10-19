@@ -8,3 +8,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 fmu_from_struct = { path = "../../fmu_from_struct" }
+
+[features]
+default = ["fmi2"]  # Default to FMI version 2
+fmi2 = []
+fmi3 = []

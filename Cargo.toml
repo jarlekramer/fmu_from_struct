@@ -2,7 +2,7 @@
 members = [
     "fmu_from_struct",
     "fmu_from_struct_derive"
-]
+, "package_fmu_after_build"]
 exclude = [
     "examples",
     "fmu_build_utils"

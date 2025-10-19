@@ -1,15 +1,15 @@
 //! Functionality to manage the "FMU state" (currently not implemented properly, all functions only
 //! returns errors...)
 //! 
-//! The FMU state is ment to allow for restart of a simulation from a given point. Examples can be 
+//! The FMU state is meant to allow for restart of a simulation from a given point. Examples can be 
 //! that a "do_step" call fails, and the FMU must be rolled back to the state before the call, in
 //! order to try again / try something different.
 //! 
-//! A state is not explcitly defined in the standard, but any data necessary to achive the above 
+//! A state is not explicitly defined in the standard, but any data necessary to achieve the above 
 //! goal must somehow be copied from the model instance. The details of how this is done is decided 
 //! in the set and get state functions.
 //! 
-//! In addtion, the states should be serializable as bytes.
+//! In addition, the states should be serializable as bytes.
 //! 
 //! WARNING: Not sure how to deal with memory in between setting and getting the state. Should the
 //! previous state be freed before a new state is stored? Or should the state be copied? Is it
@@ -61,7 +61,7 @@ fn impl_get_state(fmi_version: FmiVersion, _structure_name: &syn::Ident) -> Toke
     }
 }
 
-fn impl_set_state(fmi_version: FmiVersion, _strcuture_name: &syn::Ident) -> TokenStream2 {
+fn impl_set_state(fmi_version: FmiVersion, _structure_name: &syn::Ident) -> TokenStream2 {
     let function_name = match fmi_version {
         FmiVersion::Fmi2 => quote! { fmi2SetFMUstate },
         FmiVersion::Fmi3 => quote! { fmi3SetFMUState },

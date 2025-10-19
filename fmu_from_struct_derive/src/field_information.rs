@@ -1,7 +1,7 @@
-//! Module to analyze the fields in the strut in the context of the FMI standard.
-//! 
+//! Module to analyze the fields in the struct in the context of the FMI standard.
+//!
 //! The purpose is to extract fields that should be exposed as an FMI variable, and to determine
-//! what type of variable it is. The type is both the data type and causality, i.e., input, output, 
+//! what type of variable it is. The type is both the data type and causality, i.e., input, output,
 //! or parameter.
 
 use syn;
@@ -43,14 +43,14 @@ pub struct FieldInformation {
     pub field_type: syn::Ident,
     /// The causality of the field, taken from the last attribute specifying the causality
     pub causality: Causality,
-    /// The value reference of the field, used to uniquely identify the field in the setters, 
+    /// The value reference of the field, used to uniquely identify the field in the setters,
     /// getters, and the model description
     pub value_reference: usize,
 }
 
 impl FieldInformation {
     /// Parsers the fields in the struct and converts to a vector of FieldInformation.
-    /// 
+    ///
     /// This is to easy the processing of the struct later on.
     pub fn parse(input: &syn::DeriveInput) -> Vec<Self> {
         let data: &syn::Data = &input.data;
@@ -61,19 +61,19 @@ impl FieldInformation {
                 match data.fields {
                     syn::Fields::Named(ref fields) => {
                         let mut value_reference = 1;
-    
+
                         let mut fields_information: Vec<FieldInformation> = Vec::new();
 
                         let mut causality = Causality::Parameter;
-    
+
                         for field in fields.named.iter() {
-                            
+
                             // Check for updates to the variable type
                             let attributes = &field.attrs;
 
                             for attribute in attributes.iter() {
                                 let attribute_type = &attribute.path().segments[0].ident.to_string();
-                                
+
                                 if attribute_type == "parameter" || attribute_type == "input" || attribute_type == "output" {
                                     causality = Causality::from_string(attribute_type);
                                 }
@@ -86,15 +86,20 @@ impl FieldInformation {
                                 let field_type = match &field.ty {
                                     syn::Type::Path(type_path) => {
                                         let path = &type_path.path;
-        
+
                                         let segments = &path.segments;
-        
+
                                         let segment = &segments[0];
-        
+
                                         segment.ident.clone()
                                     },
                                     _ => unimplemented!("A field in the struct seems to have an unsupported type"),
                                 };
+
+                                // Skipping FmuInfo field
+                                if field_type == "FmuInfo" {
+                                    continue;
+                                }
 
                                 let field_information = FieldInformation {
                                     name: field.ident.clone().unwrap(),
@@ -102,13 +107,13 @@ impl FieldInformation {
                                     causality: causality.clone(),
                                     value_reference,
                                 };
-        
+
                                 fields_information.push(field_information);
-        
+
                                 value_reference += 1;
                             }
                         }
-                       
+
                         fields_information
                     },
                     syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!("Only named fields are supported"),
@@ -151,38 +156,67 @@ impl FieldInformation {
             "    </{}>\n",
             variable_start_kw,
         );
-        
-        let header = format!(
-            "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\">\n",
-            variable_start_kw,
-            self.name,
-            self.value_reference,
-            self.causality.as_string(),
-            self.variability_string(),
-        );
 
-        let start_value_name = match self.field_type.to_string().as_str() {
-            "f64" => "Real".to_string(),
-            "bool" => "Boolean".to_string(),
-            "i32" => "Real".to_string(),
-            "String" => "String".to_string(),
-            _ => unimplemented!("A start value for this type is not implemented: {}", self.field_type.to_string()),
-        };
+        match fmi_version {
+            FmiVersion::Fmi2 => {
+                let header = format!(
+                    "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\">\n",
+                    variable_start_kw,
+                    self.name,
+                    self.value_reference,
+                    self.causality.as_string(),
+                    self.variability_string(),
+                );
 
-        let body = match self.causality {
-            Causality::Parameter | Causality::Input => {
-                format!(
-                    "        <{} start=\"{}\"/>\n",
-                    start_value_name,
-                    FieldInformation::get_default_start_value_string(&self.field_type),
-                )
+                let start_value_name = match self.field_type.to_string().as_str() {
+                    "f64" => "Real".to_string(),
+                    "bool" => "Boolean".to_string(),
+                    "i32" => "Real".to_string(),
+                    "String" => "String".to_string(),
+                    _ => unimplemented!("A start value for this type is not implemented: {}", self.field_type.to_string()),
+                };
+
+                let body = match self.causality {
+                    Causality::Parameter | Causality::Input => {
+                        format!(
+                            "        <{} start=\"{}\"/>\n",
+                            start_value_name,
+                            FieldInformation::get_default_start_value_string(&self.field_type),
+                        )
+                    },
+                    Causality::Output => {
+                        format!("        <{}/>\n", start_value_name)
+                    }
+                };
+
+                format!("{}{}{}", header, body, tail)
             },
-            Causality::Output => {
-                format!("        <{}/>\n", start_value_name)
-            }
-        };
+            FmiVersion::Fmi3 => {
+                let start = format!(
+                    "    <{} name=\"{}\" valueReference=\"{}\" causality=\"{}\" variability=\"{}\"",
+                    variable_start_kw,
+                    self.name,
+                    self.value_reference,
+                    self.causality.as_string(),
+                    self.variability_string()
+                );
 
-        format!("{}{}{}", header, body, tail)
+                let end = match self.causality {
+                    Causality::Parameter | Causality::Input => {
+                        format!(
+                            " start=\"{}\"/>\n",
+                            FieldInformation::get_default_start_value_string(&self.field_type),
+                        )
+                    },
+                    Causality::Output => {
+                        "/>\n".to_string()
+                    }
+                };
+
+                format!("{}{}", start, end)
+            }
+        }
+
     }
 
     /// Converts the name of the rust variable to the fmi name. Depends both on the FMI version and
@@ -236,7 +270,7 @@ impl FieldInformation {
             "bool" => "Boolean".to_string(),
             "String" => "String".to_string(),
             _ => panic!(
-                "From field_information.rs, get_fmi_type_name. Type not supported: {}", 
+                "From field_information.rs, get_fmi_type_name. Type not supported: {}",
                 field_type.to_string()
             ),
         }

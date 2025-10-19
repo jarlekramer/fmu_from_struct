@@ -5,12 +5,21 @@ To build any of the examples do the following.
 ```
 cd <example folder>
 cargo build
-python -m fmu_build_utils.package_fmu
 ```
 
 ### Release build:
 ```
 cd <example folder>
 cargo build --release
-python -m fmu_build_utils.package_fmu --release
+```
+
+### Automated packaging
+If the command line tool `package_fmu_after_build` is installed, you can package the FMU after building it by running:
+```
+package_fmu_after_build
+```
+
+or, for a release build:
+```
+package_fmu_after_build --release
 ```
