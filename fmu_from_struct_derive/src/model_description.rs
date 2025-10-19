@@ -72,7 +72,6 @@ pub fn generate_model_description(
             }
             write!(file, "    </Outputs>\n")?;
 
-<<<<<<< HEAD
             write!(file, "   <InitialUnknowns>\n")?;
             for vr in &outputs {
                 write!(
@@ -82,18 +81,6 @@ pub fn generate_model_description(
                 )?;
             }
             write!(file, "   </InitialUnknowns>\n")?;
-=======
-            write!(file, "    <InitialUnknowns>\n")?;
-            for vr in &outputs {
-                write!(
-                    file, 
-                    "        <Unknown index=\"{}\"/>\n", 
-                    vr,
-                )?;
-            }
-
-            write!(file, "    </InitialUnknowns>\n")?;
->>>>>>> 0dfd7f8689df9ca6c67315bfeb8f0f9c143e055e
         },
         FmiVersion::Fmi3 => {
             for vr in &outputs {
