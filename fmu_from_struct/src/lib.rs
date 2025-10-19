@@ -23,6 +23,7 @@ pub trait FmuFunctions {
 
 pub mod prelude {
     pub use std::ffi;
+    pub use std::ptr;
     pub use std::path::PathBuf;
     pub use super::fmi_types::fmi3::*;
     pub use super::fmi_types::fmi2::*;

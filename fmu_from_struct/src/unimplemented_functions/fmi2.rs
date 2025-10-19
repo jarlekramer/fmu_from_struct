@@ -3,7 +3,7 @@ use crate::fmi_types::common::*;
 
 use std::ffi;
 
-// ------------------------------- Model managment -------------------------------------------------
+// ------------------------------- Model management ------------------------------------------------
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi2SetupExperiment(
@@ -23,14 +23,6 @@ pub extern "C" fn fmi2Terminate(
     _instance: *mut ffi::c_void,
 ) -> FmiStatus {
     FmiStatus::Ok
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn fmi2Reset(
-    _instance: *mut ffi::c_void,
-) -> FmiStatus {
-    FmiStatus::Error
 }
 
 #[no_mangle]

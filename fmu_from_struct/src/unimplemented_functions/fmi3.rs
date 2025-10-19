@@ -49,12 +49,6 @@ pub extern "C" fn fmi3Terminate(_instance: *mut ffi::c_void) -> FmiStatus {
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn fmi3Reset(_instance: *mut ffi::c_void) -> FmiStatus {
-    FmiStatus::Error
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub extern "C" fn fmi3EnterConfigurationMode(_instance: *mut ffi::c_void) -> FmiStatus {
     FmiStatus::Error
 }
