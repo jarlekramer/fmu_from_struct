@@ -1,13 +1,13 @@
 [package]
 name = "spring"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-fmu_from_struct = { version = "0.1.2" }
+fmu_from_struct = { path = "../../fmu_from_struct" }
 
 [features]
 default = ["fmi2"]  # Default to FMI version 2

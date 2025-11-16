@@ -1,14 +1,13 @@
 [package]
 name = "fmu_from_struct"
-version = "0.1.2"
+version = "0.2.1"
 authors = ["Jarle Kramer <jarle.kramer@gmail.com>"]
 description = "A derive macro for automatically setting up FMU models in Rust"
 homepage = "https://github.com/jarlekramer/fmu_from_struct"
 readme = "../README.md"
 repository = "https://github.com/jarlekramer/fmu_from_struct"
 license = "MIT"
-license_file = "../LICENSE"
 edition = "2021"
 
 [dependencies]
-fmu_from_struct_derive = { version = "0.1.2"}
+fmu_from_struct_derive = { version = "0.2.1"}

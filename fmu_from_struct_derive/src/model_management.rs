@@ -9,6 +9,7 @@ use quote::quote;
 use syn;
 
 use crate::fmi_version::FmiVersion;
+use crate::field_information::FieldInformation;
 
 pub fn get_instance(structure_name: &syn::Ident) -> TokenStream2 {
     quote! {
@@ -16,8 +17,18 @@ pub fn get_instance(structure_name: &syn::Ident) -> TokenStream2 {
     }
 }
 
-pub fn impl_init_functions(fmi_version: FmiVersion, model_name: &syn::Ident, fmu_info_field_name: Option<syn::Ident>) -> TokenStream2 {
-    let instantiate_tokens = impl_instantiate(fmi_version, model_name, fmu_info_field_name.clone());
+pub fn impl_init_functions(
+    fmi_version: FmiVersion, 
+    model_name: &syn::Ident, 
+    fmu_info_field_name: Option<syn::Ident>,
+    fields: &[FieldInformation]
+) -> TokenStream2 {
+    let instantiate_tokens = impl_instantiate(
+        fmi_version, 
+        model_name, 
+        fmu_info_field_name.clone(),
+        fields
+    );
     let enter_tokens = impl_enter_initialization_mode(fmi_version);
     let exit_tokens = impl_exit_initialization_mode(fmi_version, model_name);
     let reset_tokes = impl_reset(fmi_version, model_name, fmu_info_field_name.clone());
@@ -31,7 +42,12 @@ pub fn impl_init_functions(fmi_version: FmiVersion, model_name: &syn::Ident, fmu
 }
 
 /// First initialization the model, before the parameters are read from the model description.
-fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_info_field_name: Option<syn::Ident>) -> TokenStream2 {
+fn impl_instantiate(
+    fmi_version: FmiVersion, 
+    structure_name: &syn::Ident, 
+    fmu_info_field_name: Option<syn::Ident>,
+    fields: &[FieldInformation]
+) -> TokenStream2 {
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => quote! { 
             #[no_mangle]
@@ -90,6 +106,21 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_in
         quote! {}
     };
     
+    // Find the fields with custom start values
+    let mut fields_with_start_value: Vec<syn::Ident> = vec![];
+    let mut start_value_strings: Vec<String> = vec![];
+    for field in fields.iter() {
+        if let Some(start_value_string) = &field.start_value_string {
+            fields_with_start_value.push(field.name.clone());
+            start_value_strings.push(start_value_string.clone());
+        }
+    }
+    
+    let start_value_tokens: Vec<proc_macro2::TokenStream> = start_value_strings
+        .iter()
+        .map(|s| s.parse().expect("Failed to parse start value"))
+        .collect();
+    
     quote! {
         #function_signature {
             unsafe {
@@ -99,7 +130,13 @@ fn impl_instantiate(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_in
                 let mut instance = Box::new(
                     #structure_name::default()
                 );
-
+                
+                // Add custom start values here
+                #(
+                    instance.#fields_with_start_value = #start_value_tokens;
+                )*
+                
+                // Add the FMU info field if present
                 #fmu_info_code
 
                 let ptr = Box::into_raw(instance) as *mut _;
@@ -137,7 +174,10 @@ fn impl_enter_initialization_mode(fmi_version: FmiVersion) -> TokenStream2 {
     }
 }
 
-fn impl_exit_initialization_mode(fmi_version: FmiVersion, structure_name: &syn::Ident) -> TokenStream2 {
+fn impl_exit_initialization_mode(
+    fmi_version: FmiVersion, 
+    structure_name: &syn::Ident
+) -> TokenStream2 {
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => {
             quote! { fmi2ExitInitializationMode(instance_ptr: *mut ffi::c_void) -> FmiStatus }
@@ -189,7 +229,11 @@ pub fn impl_free_instance(fmi_version: FmiVersion, structure_name: &syn::Ident) 
 }
 
 /// Reset the model if necessary
-pub fn impl_reset(fmi_version: FmiVersion, structure_name: &syn::Ident, fmu_info_field_name: Option<syn::Ident>) -> TokenStream2 {
+pub fn impl_reset(
+    fmi_version: FmiVersion, 
+    structure_name: &syn::Ident, 
+    fmu_info_field_name: Option<syn::Ident>
+) -> TokenStream2 {
     let function_name = match fmi_version {
         FmiVersion::Fmi2 => quote! { fmi2Reset },
         FmiVersion::Fmi3 => quote! { fmi3Reset },
