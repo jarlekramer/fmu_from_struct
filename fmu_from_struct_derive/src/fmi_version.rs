@@ -16,37 +16,44 @@ impl FmiVersion {
         let attributes = &input.attrs;
 
         for attribute in attributes {
-            let name = &attribute.path().segments[0].ident.to_string();
             
-            if name == "fmi_version" {
-                let meta = &attribute.meta;
-
-                match meta {
-                    syn::Meta::NameValue(meta_name_value) => {
-                        let value = &meta_name_value.value;
-
-                        match value {
-                            syn::Expr::Lit(lit) => {
-                                match &lit.lit {
-                                    syn::Lit::Int(int) => {
-                                        let value = int.base10_parse::<usize>().unwrap();
-
-                                        match value {
-                                            2 => fmi_version = Self::Fmi2,
-                                            3 => fmi_version = Self::Fmi3,
+            if attribute.path().is_ident("fmu_from_struct") {
+                // Parse as Meta::List (attribute with parentheses)
+                if let syn::Meta::List(meta_list) = &attribute.meta {
+                    // Parse the nested content as a punctuated list of Meta items
+                    let nested = meta_list.parse_args_with(
+                        syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated
+                    ).expect("Failed to parse fmu_from_struct arguments");
+                    
+                    // Iterate through nested meta items to find fmi_version
+                    for meta in nested {
+                        if let syn::Meta::NameValue(nv) = meta {
+                            if nv.path.is_ident("fmi_version") {
+                                if let syn::Expr::Lit(lit) = &nv.value {
+                                    if let syn::Lit::Int(int) = &lit.lit {
+                                        let value = int.base10_parse::<usize>()
+                                            .expect("Failed to parse fmi_version as integer");
+                                        fmi_version = match value {
+                                            2 => Self::Fmi2,
+                                            3 => Self::Fmi3,
                                             _ => panic!("Only supports FMI version 2 and 3"),
-                                        }
-                                    },
-                                    _ => panic!("Only supports integer value"),
+                                        };
+                                    } else {
+                                        panic!("fmi_version must be an integer literal");
+                                    }
+                                } else {
+                                    panic!("fmi_version must be a literal value");
                                 }
-                            },
-                            _ => panic!("Only supports literal value"),
+                            }
                         }
-                    },
-                    _ => panic!("Only supports name value"),
+                    }
+                } else {
+                    panic!("fmu_from_struct must be used as #[fmu_from_struct(...)]");
                 }
             }
         }
+        
+        println!("Info: found FMI version {:?}", fmi_version);
 
         fmi_version
     }

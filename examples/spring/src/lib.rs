@@ -38,8 +38,8 @@ impl SpringModel {
 compile_error!("Features 'fmi2' and 'fmi3' are mutually exclusive. Please select only one.");
 
 #[derive(Fmu, Default, Debug, Clone)]
-#[cfg_attr(feature = "fmi2", fmi_version = 2)]
-#[cfg_attr(feature = "fmi3", fmi_version = 3)]
+#[cfg_attr(feature = "fmi2", fmu_from_struct(fmi_version = 2))]
+#[cfg_attr(feature = "fmi3", fmu_from_struct(fmi_version = 3))]
 pub struct Spring {
     #[fmu_from_struct(parameter)] 
     #[fmu_from_struct(start_value="1.0")]

@@ -15,7 +15,7 @@ use field_information::FieldInformation;
 use fmi_version::FmiVersion;
 
 
-#[proc_macro_derive(Fmu, attributes(fmi_version, fmu_from_struct))]
+#[proc_macro_derive(Fmu, attributes(fmu_from_struct))]
 /// The function that implements the derive macro. It starts by passing the input token stream, 
 /// with the help from the syn crate. In particular, the goal is to create different data structures 
 /// with relevant information about the structure. Then, the parsed data structures are used to

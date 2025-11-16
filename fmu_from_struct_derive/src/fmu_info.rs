@@ -19,7 +19,7 @@ pub fn search_for_fmu_info_field_name(input: &syn::DeriveInput) -> Option<syn::I
                                 let segment = &segments[0];
 
                                 if segment.ident == "FmuInfo" {
-                                    println!("Found FmuInfo field: {}", field.ident.as_ref().unwrap().to_string());
+                                    println!("Info: found FmuInfo field: {}", field.ident.as_ref().unwrap().to_string());
                                     return Some(field.ident.clone().unwrap());
                                 }
                             },
