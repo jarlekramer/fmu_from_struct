@@ -4,10 +4,10 @@ A derive macro for automatically setting up FMU models in Rust
 ## Development Status
 **WARNING:** This crate is still in development. Bugs can be expected in the current version and breaking changes are to be expected in future versions. The reason it is released openly is mostly to allow people interested in the purpose of this crate (see below) to contribute to and comment on the development.
 
-Only the most fundamental functionality in the FMI standard is so far implemented. However, this is often enough for simple models and use cases. The library is therefore used to implement FMUs from Rust code in separate projects related to maritime research. One example is an FMU-version of [Stormbird library](https://github.com/NTNU-IMT/stormbird). The basic functionality seems to work as intended.
+Only the most fundamental functionality in the FMI standard is so far implemented. However, this is often enough for simple models and use cases. The library is therefore used to implement FMUs from Rust code in separate projects related to maritime research. One example is an FMU-version of the [Stormbird library](https://github.com/NTNU-IMT/stormbird). The basic functionality seems to work as intended.
 
 ## Purpose
-Automate the implementation of a functional mockup interface for models written in Rust.
+Automate the implementation of a functional mockup interface for models written in Rust. That is, automatically generate everything from initialization, setters and getters, model description files and everything else needed for an FMI-model. The only thing you have to write is the do-step function. Custom initialization functionality is also possible, but optional (only required sometimes)
 
 Co-simulation is seen as the primary use case for this macro and is currently the only supported type of implementation. Model exchange may be added in the future if there is a need or interest from users.
 
