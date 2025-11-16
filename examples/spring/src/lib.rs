@@ -22,7 +22,7 @@ impl SpringModel {
     fn do_step(&mut self, time_step: f64) {
         let force = self.external_force - self.stiffness * self.position - self.damping * self.velocity;
 
-        self.acceleration = if self.mass != 0.0 {
+        self.acceleration = if self.mass > 0.0 {
             force / self.mass
         } else {
             0.0
@@ -41,13 +41,20 @@ compile_error!("Features 'fmi2' and 'fmi3' are mutually exclusive. Please select
 #[cfg_attr(feature = "fmi2", fmi_version = 2)]
 #[cfg_attr(feature = "fmi3", fmi_version = 3)]
 pub struct Spring {
-    #[parameter]  // Every variable below this attribute will be a parameter.
+    #[fmu_from_struct(parameter)] 
+    #[fmu_from_struct(start_value="1.0")]
+    /// Every variable below this attribute will be a parameter. The start value for the mass 
+    /// parameter will be equal to 1.0.
+    /// **Note**: the start value must be written such that the string can automatically be parsed 
+    /// into the right type by Rust
     pub mass: f64,
     pub stiffness: f64,
     pub damping: f64,
-    #[input]  // Every variable below this attribute will be an input.
+    #[fmu_from_struct(input)]  
+    /// Every variable below this attribute will be an input.
     pub external_force: f64,
-    #[output] // Every variable below this attribute will be an output.
+    #[fmu_from_struct(output)] 
+    /// Every variable below this attribute will be an output.
     pub position: f64,
     pub velocity: f64,
     pub acceleration: f64,
@@ -68,7 +75,6 @@ pub struct Spring {
 impl FmuFunctions for Spring {
     /// Initialize the model after the fmi interface variables has been read and set.
     fn exit_initialization_mode(&mut self) {
-        // Initialize the model with the parameters set in the fmi interface.
         self.spring_model = Some(
             SpringModel {
                 mass: self.mass,
@@ -81,9 +87,9 @@ impl FmuFunctions for Spring {
             }
         );
     }
-
+    
+    /// Set necessary variables on the model, run do step, and then read the output
     fn do_step(&mut self, _current_time: f64, time_step: f64) {
-        // Set necessary variables on the model, run do step, and then read the output
         if let Some(ref mut model) = self.spring_model {
             model.external_force = self.external_force;
 

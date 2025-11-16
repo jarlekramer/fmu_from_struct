@@ -17,6 +17,9 @@
 //! 
 //! These functions should not be called unless the feature is enabled in the modelExchange file 
 //! (which it is not for this crate).
+//! 
+//! This functionality is intended to be implemented in the future. Currently, all functions just
+//! return errors.
 
 use proc_macro2::TokenStream as TokenStream2;
 

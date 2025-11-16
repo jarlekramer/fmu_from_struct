@@ -11,18 +11,21 @@ use crate::fmi_version::FmiVersion;
 #[derive(Debug, Clone, PartialEq)]
 /// Enum defining the possible causalities in the FMI standard.
 pub enum Causality {
+    /// Variable that do not change during simulation
     Parameter,
+    /// Variables that are set before each time step and then used during doStep
     Input,
+    /// Variables that are updated during doStep and can be read after each time step
     Output,
 }
 
 impl Causality {
-    pub fn from_string(string: &str) -> Self {
+    pub fn option_from_string(string: &str) -> Option<Self> {
         match string {
-            "parameter" => Causality::Parameter,
-            "input"     => Causality::Input,
-            "output"    => Causality::Output,
-            _ => unimplemented!(),
+            "parameter" => Some(Causality::Parameter),
+            "input"     => Some(Causality::Input),
+            "output"    => Some(Causality::Output),
+            _ => None,
         }
     }
     pub fn as_string(&self) -> String {
@@ -35,7 +38,9 @@ impl Causality {
 }
 
 #[derive(Debug, Clone)]
-/// This struct stores the relevant information about a field
+/// This struct stores the relevant information about a field. This needs to be populated for every
+/// public variable in the struct that uses the macro. The information is later used to generate 
+/// both the model description and the setter and getter functions.
 pub struct FieldInformation {
     /// The name of the field, taken directly from the input struct
     pub name: syn::Ident,
@@ -46,81 +51,148 @@ pub struct FieldInformation {
     /// The value reference of the field, used to uniquely identify the field in the setters,
     /// getters, and the model description
     pub value_reference: usize,
+    /// The default value
+    pub start_value_string: Option<String>,
 }
 
 impl FieldInformation {
-    /// Parsers the fields in the struct and converts to a vector of FieldInformation.
-    ///
-    /// This is to easy the processing of the struct later on.
+    /// Parsers the fields in the struct and converts to a vector of FieldInformation. The function
+    /// mainly checks that the input is a struct with named fields, and then calls the main parsing
+    /// function, parse_named_fields.
     pub fn parse(input: &syn::DeriveInput) -> Vec<Self> {
         let data: &syn::Data = &input.data;
 
         match *data {
             // Make sure the data is a struct
             syn::Data::Struct(ref data) => {
+                // Make sure the fields are named
                 match data.fields {
                     syn::Fields::Named(ref fields) => {
-                        let mut value_reference = 1;
-
-                        let mut fields_information: Vec<FieldInformation> = Vec::new();
-
-                        let mut causality = Causality::Parameter;
-
-                        for field in fields.named.iter() {
-
-                            // Check for updates to the variable type
-                            let attributes = &field.attrs;
-
-                            for attribute in attributes.iter() {
-                                let attribute_type = &attribute.path().segments[0].ident.to_string();
-
-                                if attribute_type == "parameter" || attribute_type == "input" || attribute_type == "output" {
-                                    causality = Causality::from_string(attribute_type);
-                                }
-                            }
-
-                            // Skip private fields
-                            let visibility = &field.vis;
-
-                            if let syn::Visibility::Public(_) = visibility {
-                                let field_type = match &field.ty {
-                                    syn::Type::Path(type_path) => {
-                                        let path = &type_path.path;
-
-                                        let segments = &path.segments;
-
-                                        let segment = &segments[0];
-
-                                        segment.ident.clone()
-                                    },
-                                    _ => unimplemented!("A field in the struct seems to have an unsupported type"),
-                                };
-
-                                // Skipping FmuInfo field
-                                if field_type == "FmuInfo" {
-                                    continue;
-                                }
-
-                                let field_information = FieldInformation {
-                                    name: field.ident.clone().unwrap(),
-                                    field_type,
-                                    causality: causality.clone(),
-                                    value_reference,
-                                };
-
-                                fields_information.push(field_information);
-
-                                value_reference += 1;
-                            }
-                        }
-
-                        fields_information
+                        Self::parse_named_fields(fields)
                     },
-                    syn::Fields::Unnamed(_) | syn::Fields::Unit => unimplemented!("Only named fields are supported"),
+                    syn::Fields::Unnamed(_) | syn::Fields::Unit => {
+                        unimplemented!("Only named fields are supported")
+                    },
                 }
             },
             _ =>  panic!("Only structs are supported"),
         }
+    }
+    
+    /// Generates a vector of Self by parsing named fields in the struct. This function is where
+    /// the main parsing logic is implemented.
+    pub fn parse_named_fields(fields: &syn::FieldsNamed) -> Vec<Self> {
+        // Tracker for the value reference. Starts at 1 and then increments for each public field.
+        let mut value_reference = 1;
+
+        let mut fields_information: Vec<FieldInformation> = Vec::new();
+        
+        // Default causality is parameter
+        let mut causality = Causality::Parameter;
+
+        for field in fields.named.iter() {
+            // Check the attributes for a field
+            let attributes = &field.attrs;
+            
+            let start_value_string = Self::check_for_start_value_string(attributes);
+            let potential_new_causality = Self::check_for_new_causality(attributes);
+            
+            if let Some(new_causality) = potential_new_causality {
+                causality = new_causality;
+            }
+
+            // Skip private fields
+            let visibility = &field.vis;
+
+            if let syn::Visibility::Public(_) = visibility {
+                let field_type = match &field.ty {
+                    syn::Type::Path(type_path) => {
+                        let path = &type_path.path;
+
+                        let segments = &path.segments;
+
+                        let segment = &segments[0];
+
+                        segment.ident.clone()
+                    },
+                    _ => unimplemented!("A field in the struct seems to have an unsupported type"),
+                };
+
+                // Skipping FmuInfo field
+                if field_type == "FmuInfo" {
+                    continue;
+                }
+
+                let field_information = FieldInformation {
+                    name: field.ident.clone().unwrap(),
+                    field_type,
+                    causality: causality.clone(),
+                    value_reference,
+                    start_value_string,
+                };
+
+                fields_information.push(field_information);
+
+                value_reference += 1;
+            }
+        }
+
+        fields_information
+    }
+    
+    /// Checks whether the causality is changed in any of the attributes
+    pub fn check_for_new_causality(attributes: &[syn::Attribute]) -> Option<Causality> {
+        for attr in attributes.iter() {
+            // Check that the attribute is in the right group
+            if !attr.path().is_ident("fmu_from_struct") {
+                continue;
+            }
+            
+            if let syn::Meta::List(meta_list) = &attr.meta {
+                if let Ok(ident) = meta_list.parse_args::<syn::Ident>() {
+                    return Causality::option_from_string(ident.to_string().as_str());
+                }
+            }
+        }
+        
+        None
+    }
+    
+    /// Check for default function in the attributes and return it as 
+    pub fn check_for_start_value_string(attributes: &[syn::Attribute]) -> Option<String> {
+        for attr in attributes.iter() {
+            // Check that the attribute is in the right group
+            if !attr.path().is_ident("fmu_from_struct") {
+                continue;
+            }
+        
+            match &attr.meta {
+                syn::Meta::List(meta_list) => {
+                    if let Ok(meta_name_value) = meta_list.parse_args::<syn::MetaNameValue>() {
+                        // Check if the attribute type is the right one
+                        if !meta_name_value.path.is_ident("start_value") {
+                            continue
+                        }
+                        
+                        // Extract the function name
+                        match &meta_name_value.value {
+                            syn::Expr::Lit(expr_lit) => {
+                                match &expr_lit.lit {
+                                    syn::Lit::Str(string_value) => {
+                                        return Some(string_value.value());
+                                    },
+                                    _ => {}
+                                }
+                            },
+                            _ => {}
+                        }   
+                    }
+                },
+                _ => {}
+            }
+        }
+            
+        None
     }
 
     /// Filters the fields based on the data type. Used to get all the fields of a certain type in
@@ -145,7 +217,8 @@ impl FieldInformation {
             },
         }
     }
-
+    
+    /// Generates the model description string for a field
     pub fn model_description_string(&self, fmi_version: FmiVersion) -> String {
         let variable_start_kw = match fmi_version {
             FmiVersion::Fmi2 => "ScalarVariable".to_string(),
@@ -181,7 +254,7 @@ impl FieldInformation {
                         format!(
                             "        <{} start=\"{}\"/>\n",
                             start_value_name,
-                            FieldInformation::get_default_start_value_string(&self.field_type),
+                            self.get_start_value_string(),
                         )
                     },
                     Causality::Output => {
@@ -205,7 +278,7 @@ impl FieldInformation {
                     Causality::Parameter | Causality::Input => {
                         format!(
                             " start=\"{}\"/>\n",
-                            FieldInformation::get_default_start_value_string(&self.field_type),
+                            self.get_start_value_string(),
                         )
                     },
                     Causality::Output => {
@@ -276,13 +349,22 @@ impl FieldInformation {
         }
     }
 
-    pub fn get_default_start_value_string(field_type: &syn::Ident) -> String {
-        match field_type.to_string().as_str() {
-            "f64" => "0.0".to_string(),
-            "bool" => "false".to_string(),
-            "i32" => "0".to_string(),
-            "String" => "".to_string(),
-            _ => unimplemented!("A default start value for this type is not implemented: {}", field_type.to_string()),
+    pub fn get_start_value_string(&self) -> String {
+        if let Some(start_value_string) = &self.start_value_string {
+            start_value_string.clone()
+        } else {
+            match self.field_type.to_string().as_str() {
+                "f64" => "0.0".to_string(),
+                "bool" => "false".to_string(),
+                "i32" => "0".to_string(),
+                "String" => "".to_string(),
+                _ => unimplemented!(
+                    "A default start value for this type is not implemented: {}", 
+                    self.field_type.to_string()
+                ),
+            }
         }
+        
+        
     }
 }

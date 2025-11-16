@@ -49,10 +49,12 @@ if __name__ == '__main__':
     pos_array = []
     vel_array = []
     acc_array = []
-
+    
+    # Only sett the stiffness and damping, as mass has a default value of 1.0 in the FMU.
+    # **Note**: the mass can, off-course, be overridden here if wanted
     fmu.setReal(
-        [mass_index, stiffness_index, damping_index], 
-        [1.0, 1.0, 0.1]
+        [stiffness_index, damping_index], 
+        [1.0, 0.1]
     )
 
     fmu.setReal([position_index], [1.0])
@@ -71,7 +73,9 @@ if __name__ == '__main__':
         time += step_size
 
         # Extract output values
-        pos, vel, acc = fmu.getReal([position_index, velocity_index, acceleration_index])
+        pos, vel, acc = fmu.getReal(
+            [position_index, velocity_index, acceleration_index]
+        )
 
         time_array.append(time)
         pos_array.append(pos)

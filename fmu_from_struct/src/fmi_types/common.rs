@@ -1,7 +1,7 @@
 //! Types that are common to all fmi versions.
 
 #[repr(C)]
-/// Enum that represents the states that an fmi model can return. 
+/// Enum that represents the states that an fmu model can return. 
 /// 
 /// Note: technically, the fmi version 2 has an additional field called "fmi2Pending" that is not
 /// included here. That is because it is currently not used in this macro, and it is very useful to 

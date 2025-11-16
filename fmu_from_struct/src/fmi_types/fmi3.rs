@@ -1,7 +1,7 @@
 //! Collection of custom types that is necessary to implement the FMI3 standard. The names follows
-//! the original c syntax exactly, and is therefore not idomatic rust.
+//! the original c syntax exactly, and is therefore not idiomatic rust.
 //! 
-//! Note: the fmi types that are directly tranlasted to a standard type, e.g. fmi3Float32, are not
+//! Note: the fmi types that are directly translated to a standard type, e.g. fmi3Float32, are not
 //! defined here, as it deemed unnecessary. 
 
 use std::ffi;

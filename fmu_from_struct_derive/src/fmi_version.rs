@@ -1,10 +1,15 @@
+use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Enum that specifies the fmi version to use.
 pub enum FmiVersion {
     Fmi2,
     Fmi3,
 }
 
 impl FmiVersion {
+    /// Parses the fmi version from the input structure attributes.
     pub fn parse(input: &syn::DeriveInput) -> Self {
         let mut fmi_version = Self::Fmi3;
         
@@ -59,4 +64,44 @@ impl FmiVersion {
             Self::Fmi3 => "3.0".to_string(),
         }
     }
+    
+    pub fn impl_fmi_version(&self) -> TokenStream2 {
+        let function_name = match self {
+            FmiVersion::Fmi2 => quote! { fmi2GetVersion },
+            FmiVersion::Fmi3 => quote! { fmi3GetVersion },
+        };
+    
+        let fmi_version_token = match self {
+            FmiVersion::Fmi2 => quote! { "2.0\0" },
+            FmiVersion::Fmi3 => quote! { "3.0\0" },
+        };
+    
+        let version_tokens =  quote! {
+            #[no_mangle]
+            #[allow(non_snake_case)]
+            pub extern "C" fn #function_name() -> *const ffi::c_char {
+                #fmi_version_token.as_ptr() as *const ffi::c_char
+            }
+        };
+    
+        let types_platform_tokens = if *self == FmiVersion::Fmi2 {
+            quote! {
+                #[no_mangle]
+                #[allow(non_snake_case)]
+                pub extern "C" fn fmi2GetTypesPlatform() -> *const ffi::c_char {
+                    "default\0".as_ptr() as *const ffi::c_char
+                }
+            }
+        } else {
+            quote! {}
+        };
+    
+       quote! {
+            #version_tokens
+            #types_platform_tokens
+        }
+    }
+    
+    
 }
+
