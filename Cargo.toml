@@ -1,8 +1,10 @@
 [workspace]
 members = [
     "fmu_from_struct",
-    "fmu_from_struct_derive"
-, "package_fmu_after_build"]
+    "fmu_from_struct_derive",
+    "package_fmu_after_build",
+    "cargo-fmu-from-struct",
+]
 exclude = [
     "examples",
     "fmu_build_utils"

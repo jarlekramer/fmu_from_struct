@@ -6,11 +6,33 @@ from fmpy import read_model_description, extract
 from fmpy.fmi2 import FMU2Slave
 
 import shutil
+from pathlib import Path
 import matplotlib.pyplot as plt
 
+def find_fmu() -> Path:
+    '''
+    Returns the path to the Spring.fmu, built with 'cargo fmu-from-struct'. The release build is
+    used if it exists, otherwise the debug build.
+    '''
+    fmu_folder = Path(__file__).resolve().parent.parent / 'target' / 'fmu'
+
+    for profile in ['release', 'debug']:
+        fmu_path = fmu_folder / profile / 'Spring.fmu'
+
+        if fmu_path.exists():
+            return fmu_path
+
+    raise FileNotFoundError(
+        f"Spring.fmu not found in {fmu_folder / 'release'} or {fmu_folder / 'debug'}. "
+        "Build it first by running 'cargo fmu-from-struct --release' (or 'cargo fmu-from-struct' "
+        "for a debug build) in the spring folder."
+    )
+
 if __name__ == '__main__':
-    fmu_filename = '../Spring.fmu'
-    
+    fmu_filename = str(find_fmu())
+
+    print(f'Running {fmu_filename}')
+
     model_description = read_model_description(fmu_filename)
 
     vrs = {}

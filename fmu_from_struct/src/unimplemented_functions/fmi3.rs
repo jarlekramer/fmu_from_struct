@@ -13,7 +13,7 @@ pub extern "C" fn fmi3InstantiateModelExchange(
     _visible: bool,
     _loggingOn: bool,
     _instanceEnvironment: *mut ffi::c_void,
-    _logMessage: fmi3LogMessageCallback
+    _logMessage: Option<fmi3LogMessageCallback>,
 ) -> *mut ffi::c_void {
     std::ptr::null_mut()
 }
@@ -27,10 +27,10 @@ pub extern "C" fn fmi3InstantiateScheduledExecution(
     _visible: bool,
     _loggingOn: bool,
     _instanceEnvironment: *mut ffi::c_void,
-    _logMessage: fmi3LogMessageCallback,
-    _clockUpdate: fmi3ClockUpdateCallback,
-    _lockPreemption: fmi3LockPreemptionCallback,
-    _unlockPreemption: fmi3UnlockPreemptionCallback,
+    _logMessage: Option<fmi3LogMessageCallback>,
+    _clockUpdate: Option<fmi3ClockUpdateCallback>,
+    _lockPreemption: Option<fmi3LockPreemptionCallback>,
+    _unlockPreemption: Option<fmi3UnlockPreemptionCallback>,
 ) -> *mut ffi::c_void {
     std::ptr::null_mut()
 }
@@ -72,7 +72,7 @@ pub extern "C" fn fmi3GetOutputDerivatives(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
     _nValueReferences: usize,
-    _orders: *const u32,
+    _orders: *const i32,
     _values: *mut f64,
     _nValues: usize,
 ) -> FmiStatus {
@@ -214,9 +214,9 @@ pub unsafe extern "C" fn fmi3GetBinary(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
     _nValueReferences: usize,
+    _valueSizes: *mut usize,
     _values: *mut *const u8,
     _nValues: usize,
-    _sizes: *mut usize,
 ) -> FmiStatus {
     FmiStatus::Error
 }
@@ -226,6 +226,7 @@ pub unsafe extern "C" fn fmi3GetBinary(
 pub unsafe extern "C" fn fmi3GetClock(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
+    _nValueReferences: usize,
     _values: *mut bool,
 ) -> FmiStatus {
     FmiStatus::Error
@@ -305,7 +306,8 @@ pub extern "C" fn fmi3GetIntervalFraction(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
     _nValueReferences: usize,
-    _interval: *mut f64,
+    _counters: *mut u64,
+    _resolutions: *mut u64,
     _qualifiers: *mut fmi3IntervalQualifier
 ) -> FmiStatus {
     FmiStatus::Error
@@ -335,6 +337,8 @@ pub extern "C" fn fmi3GetShiftFraction(
     FmiStatus::Error
 }
 
+/// Logging is not supported yet, so the request is ignored. Returns OK, as importers may call this
+/// function whenever logging is enabled, and fail if it returns an error.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi3SetDebugLogging(
@@ -343,7 +347,7 @@ pub extern "C" fn fmi3SetDebugLogging(
     _nCategories: usize,
     _categories: *const *const ffi::c_char,
 ) -> FmiStatus {
-    FmiStatus::Error
+    FmiStatus::Ok
 }
 
 #[no_mangle]
@@ -352,6 +356,7 @@ pub extern "C" fn fmi3SetBinary(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
     _nValueReferences: usize,
+    _valueSizes: *const usize,
     _values: *const *const u8,
     _nValues: usize,
 ) -> FmiStatus {
@@ -363,6 +368,7 @@ pub extern "C" fn fmi3SetBinary(
 pub extern "C" fn fmi3SetClock(
     _instance: *mut ffi::c_void,
     _valueReferences: *const u32,
+    _nValueReferences: usize,
     _values: *const bool,
 ) -> FmiStatus {
     FmiStatus::Error

@@ -1,8 +1,8 @@
 [package]
 name = "package_fmu_after_build"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jarle Kramer <jarle.kramer@gmail.com>"]
-description = "A simple program that takes the result from a fmu_from_struct build and packages it as an FMU zip file."
+description = "DEPRECATED: use cargo-fmu-from-struct instead. A simple program that takes the result from a fmu_from_struct build and packages it as an FMU zip file."
 homepage = "https://github.com/jarlekramer/fmu_from_struct"
 readme = "README.md"
 repository = "https://github.com/jarlekramer/fmu_from_struct"

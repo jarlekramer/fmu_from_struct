@@ -85,7 +85,7 @@ fn impl_set_state(fmi_version: FmiVersion, _structure_name: &syn::Ident) -> Toke
 fn impl_free_state(fmi_version: FmiVersion, _structure_name: &syn::Ident) -> TokenStream2 {    
     let function_signature = match fmi_version {
         FmiVersion::Fmi2 => quote! { 
-            fmi2FreeFMUstate(instance_ptr: *const ffi::c_void, state_ptr: *mut ffi::c_void) -> FmiStatus 
+            fmi2FreeFMUstate(instance_ptr: *const ffi::c_void, state_ptr: *mut *mut ffi::c_void) -> FmiStatus 
         },
         FmiVersion::Fmi3 => quote! {
             fmi3FreeFMUState(instance_ptr: *const ffi::c_void, state_ptr: *mut *mut ffi::c_void) -> FmiStatus
@@ -137,9 +137,9 @@ fn impl_deserialize_state(fmi_version: FmiVersion, _structure_name: &syn::Ident)
             quote! {
                 fmi2DeSerializeFMUstate(
                     instance_ptr: *mut ffi::c_void,
-                    state_ptr: *mut ffi::c_void,
                     serialized_state: #serialized_state_type,
                     size: usize,
+                    state_ptr: *mut *mut ffi::c_void,
                 )
             }
         },

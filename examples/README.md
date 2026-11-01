@@ -1,25 +1,23 @@
 ## Build Instructions
-To build any of the examples do the following.
+To build any of the examples, install the cargo subcommand `cargo-fmu-from-struct` (once):
+```
+cargo install cargo-fmu-from-struct
+```
 
-### Development build:
+or, when working on this repository, install the local version:
+```
+cargo install --path ../cargo-fmu-from-struct
+```
+
+Then build and package the FMU:
 ```
 cd <example folder>
-cargo build
-```
-
-### Release build:
-```
-cd <example folder>
-cargo build --release
-```
-
-### Automated packaging
-If the command line tool `package_fmu_after_build` is installed, you can package the FMU after building it by running:
-```
-package_fmu_after_build
+cargo fmu-from-struct
 ```
 
 or, for a release build:
 ```
-package_fmu_after_build --release
+cargo fmu-from-struct --release
 ```
+
+The FMU is written to `target/fmu/debug/<ModelName>.fmu` or `target/fmu/release/<ModelName>.fmu`.

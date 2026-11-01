@@ -66,3 +66,16 @@ pub struct fmi2CallbackFunctions {
     pub step_finished: Option<fmi2StepFinished>,
     pub component_environment: *mut ffi::c_void,
 }
+
+#[repr(C)]
+#[allow(non_camel_case_types)]
+/// Event information returned by `fmi2NewDiscreteStates` (model exchange). The booleans are
+/// `fmi2Boolean`, i.e., C `int`.
+pub struct fmi2EventInfo {
+    pub new_discrete_states_needed: i32,
+    pub terminate_simulation: i32,
+    pub nominals_of_continuous_states_changed: i32,
+    pub values_of_continuous_states_changed: i32,
+    pub next_event_time_defined: i32,
+    pub next_event_time: f64,
+}

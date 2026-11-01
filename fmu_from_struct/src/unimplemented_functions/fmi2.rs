@@ -34,6 +34,8 @@ pub extern "C" fn fmi2CancelStep(
 }
 
 // ------------------------------- Getting and setting variables -----------------------------------
+/// Logging is not supported yet, so the request is ignored. Returns OK, as importers may call this
+/// function whenever logging is enabled, and fail if it returns an error.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi2SetDebugLogging(
@@ -42,18 +44,19 @@ pub extern "C" fn fmi2SetDebugLogging(
     _n_categories: usize,
     _categories: *const *const ffi::c_char,
 ) -> FmiStatus {
-    FmiStatus::Error
+    FmiStatus::Ok
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn fmi2GetDirectionalDerivative(
     _instance: *mut ffi::c_void,
-    _v_ref: *const u32,
-    _n_v_ref: usize,
-    _z_ref: *const u32,
-    _n_z_ref: usize,
-    _dv: *mut f64,
+    _unknown_value_references: *const u32,
+    _n_unknowns: usize,
+    _known_value_references: *const u32,
+    _n_knowns: usize,
+    _delta_knowns: *const f64,
+    _delta_unknowns: *mut f64,
 ) -> FmiStatus {
     FmiStatus::Error
 }
@@ -128,6 +131,98 @@ pub unsafe extern "C" fn fmi2GetStringStatus(
     _instance: *mut ffi::c_void,
     _status_kind: fmi2StatusKind,
     _value: *mut *const ffi::c_char,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+// --------------------------- Model Exchange ------------------------------------------------------
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2EnterEventMode(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2NewDiscreteStates(
+    _instance: *mut ffi::c_void,
+    _event_info: *mut fmi2EventInfo,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2EnterContinuousTimeMode(_instance: *mut ffi::c_void) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2CompletedIntegratorStep(
+    _instance: *mut ffi::c_void,
+    _no_set_fmu_state_prior_to_current_point: i32,
+    _enter_event_mode: *mut i32,
+    _terminate_simulation: *mut i32,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2SetTime(
+    _instance: *mut ffi::c_void,
+    _time: f64,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2SetContinuousStates(
+    _instance: *mut ffi::c_void,
+    _states: *const f64,
+    _n_states: usize,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2GetDerivatives(
+    _instance: *mut ffi::c_void,
+    _derivatives: *mut f64,
+    _n_states: usize,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2GetEventIndicators(
+    _instance: *mut ffi::c_void,
+    _event_indicators: *mut f64,
+    _n_event_indicators: usize,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2GetContinuousStates(
+    _instance: *mut ffi::c_void,
+    _states: *mut f64,
+    _n_states: usize,
+) -> FmiStatus {
+    FmiStatus::Error
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn fmi2GetNominalsOfContinuousStates(
+    _instance: *mut ffi::c_void,
+    _nominals: *mut f64,
+    _n_states: usize,
 ) -> FmiStatus {
     FmiStatus::Error
 }

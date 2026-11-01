@@ -1,5 +1,12 @@
 # Package FMU After Build
 
+> **DEPRECATED:** This tool is replaced by the cargo subcommand [cargo-fmu-from-struct](https://crates.io/crates/cargo-fmu-from-struct), which builds and packages the FMU in one step:
+> ```
+> cargo install cargo-fmu-from-struct
+> cargo fmu-from-struct --release
+> ```
+> `package_fmu_after_build` only works with `fmu_from_struct` version 0.2.x and earlier. From version 0.3.0, the macro writes `modelDescription.xml` to the target folder instead of the crate folder, so this tool will not find it. It will not receive further updates.
+
 This command line tool is intended to be used together with the derive macro [fmu_from_struct](https://github.com/jarlekramer/fmu_from_struct)
 
 Its job is to package files after a build into a zip file that supports the FMU-standard.
