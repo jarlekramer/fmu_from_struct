@@ -20,9 +20,9 @@ pub struct FmuContent<'a> {
 }
 
 /// Writes the FMU to the output path. The structure of the FMU is:
-/// - modelDescription.xml
-/// - binaries/<platform>/<modelIdentifier>.<dll|so|dylib>
-/// - resources/...
+/// - `modelDescription.xml`
+/// - `binaries/<platform>/<modelIdentifier>.<dll|so|dylib>`
+/// - `resources/...`
 pub fn write_fmu(content: &FmuContent, platform: &Platform, output: &Path) -> Result<(), CliError> {
     if let Some(parent) = output.parent() {
         if !parent.as_os_str().is_empty() {

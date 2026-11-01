@@ -1,6 +1,6 @@
 # Change log fmu_from_struct
 
-## 0.3.0 - Unreleased
+## 0.3.0 - 2026.11.01
 
 ### Breaking changes
 - The generated `modelDescription.xml` is now written to `<target dir>/fmu/<crate_name>/modelDescription.xml` instead of the current working directory. Previously, the file ended up in the source folder, and for crates in a Cargo workspace it ended up in the workspace root rather than the crate folder. The target directory is taken from `CARGO_TARGET_DIR` if set, otherwise the default `target` folder is used. The file is meant for inspection. The model description is also embedded in the compiled library as an exported static, `FMU_FROM_STRUCT_EMBEDDED_MODEL_DESCRIPTION`, and `cargo-fmu-from-struct` packages that copy, so it always matches the library. Cargo does not recompile a crate that is up to date, so the file may be from a build with another profile or other features.
