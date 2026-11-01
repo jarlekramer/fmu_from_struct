@@ -85,8 +85,6 @@ pub fn generate_model_description(
     name: &str,
     fields: &Vec<FieldInformation>
 ) -> String {
-    let id = Uuid::new_v4();
-
     let mut xml = String::new();
 
     let id_string = match fmi_version {
@@ -102,7 +100,7 @@ pub fn generate_model_description(
     write!(xml, "    modelName=\"{}\"\n", name).unwrap();
     write!(xml, "    description=\"to come\"\n").unwrap();
     write!(xml, "    generationTool=\"The fmu_from_struct macro for automatic fmi generation for rust structs\"\n").unwrap();
-    write!(xml, "    {}=\"{}\"\n", id_string, id).unwrap();
+    write!(xml, "    {}=\"{}\"\n", id_string, ID_PLACEHOLDER).unwrap();
     write!(xml, ">\n").unwrap();
 
     // The do_step function accepts any time step, so variable step sizes are supported. The
@@ -181,5 +179,70 @@ pub fn generate_model_description(
 
     write!(xml, "</fmiModelDescription>\n").unwrap();
 
-    xml
+    // The id is computed from the content of the model description, so that it only changes when
+    // the model changes. This makes it possible to compare model descriptions from different
+    // builds, e.g., for different platforms, and to check that they belong to the same model.
+    let id = Uuid::new_v5(&ID_NAMESPACE, xml.as_bytes());
+
+    xml.replace(ID_PLACEHOLDER, &id.to_string())
+}
+
+/// Placeholder for the guid / instantiationToken, replaced when the rest of the model description
+/// is generated.
+const ID_PLACEHOLDER: &str = "__FMU_FROM_STRUCT_ID__";
+
+/// Namespace for the name-based (version 5) UUIDs generated from the model description. The value
+/// is arbitrary, but must never change, as that would change the id of every model.
+const ID_NAMESPACE: Uuid = Uuid::from_u128(0x6f3c_8a1e_2b4d_4e7f_9a10_c5d2_e8b3_f417);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::field_information::Causality;
+
+    fn field(name: &str, field_type: &str, causality: Causality, value_reference: usize) -> FieldInformation {
+        FieldInformation {
+            name: syn::Ident::new(name, proc_macro2::Span::call_site()),
+            field_type: syn::Ident::new(field_type, proc_macro2::Span::call_site()),
+            causality,
+            value_reference,
+            start_value_string: None,
+        }
+    }
+
+    fn id(model_description: &str) -> String {
+        let start = model_description.find("guid=\"")
+            .or_else(|| model_description.find("instantiationToken=\""))
+            .unwrap();
+        let rest = &model_description[start..];
+        let value_start = rest.find('"').unwrap() + 1;
+        let value_end = value_start + rest[value_start..].find('"').unwrap();
+
+        rest[value_start..value_end].to_string()
+    }
+
+    #[test]
+    fn id_depends_only_on_content() {
+        let fields = vec![
+            field("mass", "f64", Causality::Parameter, 1),
+            field("position", "f64", Causality::Output, 2),
+        ];
+
+        let first = generate_model_description(FmiVersion::Fmi2, "Spring", &fields);
+        let second = generate_model_description(FmiVersion::Fmi2, "Spring", &fields);
+
+        // Same model gives the same model description, including the id
+        assert_eq!(first, second);
+        assert!(!first.contains(ID_PLACEHOLDER));
+        assert!(Uuid::parse_str(&id(&first)).is_ok());
+
+        // A different model gives a different id
+        let mut changed_fields = fields.clone();
+        changed_fields[1].causality = Causality::Input;
+        let changed = generate_model_description(FmiVersion::Fmi2, "Spring", &changed_fields);
+        assert_ne!(id(&first), id(&changed));
+
+        let fmi3 = generate_model_description(FmiVersion::Fmi3, "Spring", &fields);
+        assert_ne!(id(&first), id(&fmi3));
+    }
 }

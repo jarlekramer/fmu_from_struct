@@ -7,6 +7,7 @@
 - The `package_fmu_after_build` tool is deprecated and replaced by `cargo-fmu-from-struct` (see below). Due to the new location of `modelDescription.xml`, it does not work with this version of the macro. A final release of `package_fmu_after_build` (0.1.1) prints a deprecation warning and has a deprecation notice in its README.
 
 ### New features
+- The `guid` (FMI 2) / `instantiationToken` (FMI 3) in the model description is now a name-based UUID (version 5) computed from the content of the model description, instead of a random UUID generated on every compilation. It therefore only changes when the model changes. This makes it possible to check whether model descriptions from different builds (e.g., for different platforms) belong to the same model, which is needed for packaging binaries for several platforms in one FMU in the future.
 - New cargo subcommand, `cargo-fmu-from-struct`, which builds the crate and packages the FMU in one step: `cargo install cargo-fmu-from-struct`, then `cargo fmu-from-struct --release`. Compared to `package_fmu_after_build`, it:
   - Passes all unknown arguments to `cargo build` (e.g., `--release`, `-p`, `--features`, `--target`, `--profile`).
   - Finds the compiled library from the cargo build output, instead of assuming that the crate folder has the same name as the crate and that the build is in `target/debug` or `target/release`. Workspaces and custom target directories therefore work.
