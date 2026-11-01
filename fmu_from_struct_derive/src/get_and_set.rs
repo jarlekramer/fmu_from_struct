@@ -101,7 +101,8 @@ fn function_signature(
                 Access::Set => quote! { *const *const ffi::c_char },
             }
         },
-        "bool" => {
+        // fmi2Boolean is an int, while fmi3Boolean is a C bool
+        "bool" if fmi_version == FmiVersion::Fmi2 => {
             match access {
                 Access::Get => quote! { *mut i32 },
                 Access::Set => quote! { *const i32 },
@@ -170,17 +171,25 @@ fn impl_get_function(
         let field_names = filtered_fields.iter().map(|field| &field.name);
         let field_value_references = filtered_fields.iter().map(|field| field.value_reference);
 
+        let is_string = field_type == "String";
+
         let get_value_at_index = match field_type.to_string().as_str() {
             "String" => {
                 quote! {
-                    let rust_string = value.clone();
+                    // Strings with interior null bytes can not be represented as C strings
+                    let c_string = match ffi::CString::new(value) {
+                        Ok(c_string) => c_string,
+                        Err(_) => return FmiStatus::Error,
+                    };
 
-                    let c_string = ffi::CString::new(rust_string).unwrap();
+                    *values.offset(i as isize) = c_string.as_ptr();
 
-                    *values.offset(i as isize) = c_string.into_raw();
+                    // The string buffer owns the memory, so the pointer stays valid until the
+                    // buffer is cleared
+                    fmu_instance.string_buffer.push(c_string);
                 }
             },
-            "bool" => {
+            "bool" if fmi_version == FmiVersion::Fmi2 => {
                 quote! {
                     *values.offset(i as isize) = if value {
                         1
@@ -196,10 +205,19 @@ fn impl_get_function(
             }
         };
 
+        // Strings returned from a previous call are freed when the getter is called again
+        let clear_string_buffer = if is_string {
+            quote! { fmu_instance.string_buffer.clear(); }
+        } else {
+            quote! {}
+        };
+
         quote! {
             #function_signature {
                 unsafe {
                     #instance_tokens;
+
+                    #clear_string_buffer
 
                     for i in 0..n_value_references {
                         let input_value_reference = *value_references.offset(i as isize) as usize;
@@ -212,10 +230,7 @@ fn impl_get_function(
                                     #get_value_at_index
                                 }
                             )*
-                            _ => {
-                                // Consider changing this to return an error
-                                panic!("Unknown value reference: {}", input_value_reference)
-                            } 
+                            _ => return FmiStatus::Error,
                         }
                     }
                 }
@@ -258,14 +273,20 @@ fn impl_set_function(
         let set_value_at_index = match field_type.to_string().as_str() {
             "String" => {
                 quote! {
-                    let c_str: &ffi::CStr = ffi::CStr::from_ptr(*values.offset(i as isize));
+                    let c_str_ptr = *values.offset(i as isize);
+
+                    if c_str_ptr.is_null() {
+                        return FmiStatus::Error;
+                    }
+
+                    let c_str: &ffi::CStr = ffi::CStr::from_ptr(c_str_ptr);
 
                     let rust_string: String = c_str.to_string_lossy().into_owned();
                 
                     let value = rust_string
                 }
             },
-            "bool" => {
+            "bool" if fmi_version == FmiVersion::Fmi2 => {
                 quote! {
                     let value = *values.offset(i as isize) != 0;
                 }
@@ -293,10 +314,7 @@ fn impl_set_function(
                                     instance.#field_names = value;                               
                                 }
                             )*
-                            _ => {
-                                // Consider changing this to return an error
-                                panic!("Unknown value reference: {}", input_value_reference)
-                            } 
+                            _ => return FmiStatus::Error,
                         }
                     }
                 }

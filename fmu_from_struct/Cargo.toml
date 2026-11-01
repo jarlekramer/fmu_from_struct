@@ -10,4 +10,4 @@ license = "MIT"
 edition = "2021"
 
 [dependencies]
-fmu_from_struct_derive = { version = "0.2.1"}
+fmu_from_struct_derive = { version = "0.2.1", path = "../fmu_from_struct_derive" }

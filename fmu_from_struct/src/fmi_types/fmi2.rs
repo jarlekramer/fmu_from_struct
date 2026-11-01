@@ -57,10 +57,12 @@ pub type fmi2StepFinished = extern "C" fn(
 // ------------------------- Custom structs --------------------------------------------------------
 #[repr(C)]
 #[allow(non_camel_case_types)]
+/// The callback functions passed to `fmi2Instantiate`. The function pointers are wrapped in an
+/// `Option`, as the importer is allowed to pass NULL for some of them (e.g., `step_finished`).
 pub struct fmi2CallbackFunctions {
-    logger: fmi2CallbackLogger,
-    allocate_memory: fmi2CallbackAllocateMemory,
-    free_memory: fmi2CallbackFreeMemory,
-    step_finished: fmi2StepFinished,
-    component_environment: *mut ffi::c_void,
+    pub logger: Option<fmi2CallbackLogger>,
+    pub allocate_memory: Option<fmi2CallbackAllocateMemory>,
+    pub free_memory: Option<fmi2CallbackFreeMemory>,
+    pub step_finished: Option<fmi2StepFinished>,
+    pub component_environment: *mut ffi::c_void,
 }

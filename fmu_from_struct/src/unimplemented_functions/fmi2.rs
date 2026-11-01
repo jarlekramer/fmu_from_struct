@@ -8,10 +8,10 @@ use std::ffi;
 #[allow(non_snake_case)]
 pub extern "C" fn fmi2SetupExperiment(
     _instance: *mut ffi::c_void,
-    _tolerance_defined: bool,
+    _tolerance_defined: i32,
     _tolerance: f64,
     _start_time: f64,
-    _stop_time_defined: bool,
+    _stop_time_defined: i32,
     _stop_time: f64,
 ) -> FmiStatus {
     FmiStatus::Ok
@@ -38,7 +38,7 @@ pub extern "C" fn fmi2CancelStep(
 #[allow(non_snake_case)]
 pub extern "C" fn fmi2SetDebugLogging(
     _instance: *mut ffi::c_void,
-    _logging_on: bool,
+    _logging_on: i32,
     _n_categories: usize,
     _categories: *const *const ffi::c_char,
 ) -> FmiStatus {
@@ -117,7 +117,7 @@ pub extern "C" fn fmi2GetIntegerStatus(
 pub extern "C" fn fmi2GetBooleanStatus(
     _instance: *mut ffi::c_void,
     _status_kind: fmi2StatusKind,
-    _value: *mut bool,
+    _value: *mut i32,
 ) -> FmiStatus {
     FmiStatus::Error
 }

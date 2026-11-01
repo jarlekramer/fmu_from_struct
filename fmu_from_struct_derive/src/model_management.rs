@@ -11,9 +11,25 @@ use syn;
 use crate::fmi_version::FmiVersion;
 use crate::field_information::FieldInformation;
 
+/// Generates code that gets the FMU instance wrapper, `fmu_instance`, and the user struct, 
+/// `instance`, from the instance pointer.
 pub fn get_instance(structure_name: &syn::Ident) -> TokenStream2 {
     quote! {
-        let instance: &mut #structure_name = &mut *(instance_ptr as *mut #structure_name);
+        let fmu_instance: &mut FmuInstance<#structure_name> = 
+            &mut *(instance_ptr as *mut FmuInstance<#structure_name>);
+        let instance: &mut #structure_name = &mut fmu_instance.model
+    }
+}
+
+/// Wraps the code in `std::panic::catch_unwind`, so that panics in user code are not propagated
+/// through the C interface, which would abort the program. A panic is converted to the
+/// `panic_value`.
+pub fn catch_panic(code: TokenStream2, panic_value: TokenStream2) -> TokenStream2 {
+    quote! {
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| { #code })) {
+            Ok(value) => value,
+            Err(_) => #panic_value,
+        }
     }
 }
 
@@ -57,9 +73,9 @@ fn impl_instantiate(
                 _fmu_type: fmi2Type,
                 _fmu_guid: *const ffi::c_char,
                 resource_path: *const ffi::c_char,
-                _functions: fmi2CallbackFunctions,
-                _visible: bool,
-                _logging_on: bool,
+                _functions: *const fmi2CallbackFunctions,
+                _visible: i32,
+                _logging_on: i32,
             ) -> *mut ffi::c_void 
         },
         FmiVersion::Fmi3 => quote! {
@@ -76,30 +92,22 @@ fn impl_instantiate(
                 _required_intermediate_variables: *const u32,
                 _n_required_intermediate_variables: usize,
                 _instance_environment: *mut ffi::c_void,
-                _log_message: fmi3LogMessageCallback,
-                _intermediate_update: fmi3IntermediateUpdateCallback,
+                _log_message: Option<fmi3LogMessageCallback>,
+                _intermediate_update: Option<fmi3IntermediateUpdateCallback>,
             ) -> *mut ffi::c_void 
         },
     };
 
+    let fmi_major_version: u32 = match fmi_version {
+        FmiVersion::Fmi2 => 2,
+        FmiVersion::Fmi3 => 3,
+    };
+
     let fmu_info_code = if let Some(field_name) = fmu_info_field_name {
         quote! {
-            let resource_path_string: String = ffi::CStr::from_ptr(resource_path)
-                .to_string_lossy()
-                .into_owned();
-
-            let resource_path_string = resource_path_string
-                .strip_prefix("file:///")
-                .unwrap_or(&resource_path_string)
-                .to_string();
-
-            let resource_path_string = resource_path_string.replace("/", "\\");
-
-            let resource_path_buf: PathBuf = PathBuf::from(resource_path_string);
-
             instance.#field_name = FmuInfo {
                 name: instance_name,
-                resource_path: resource_path_buf,
+                resource_path: resource_path_from_c_str(resource_path, #fmi_major_version),
             };
         }
     } else {
@@ -108,40 +116,46 @@ fn impl_instantiate(
     
     // Find the fields with custom start values
     let mut fields_with_start_value: Vec<syn::Ident> = vec![];
-    let mut start_value_strings: Vec<String> = vec![];
+    let mut start_value_tokens: Vec<TokenStream2> = vec![];
     for field in fields.iter() {
-        if let Some(start_value_string) = &field.start_value_string {
+        if let Some(tokens) = field.start_value_tokens() {
             fields_with_start_value.push(field.name.clone());
-            start_value_strings.push(start_value_string.clone());
+            start_value_tokens.push(tokens);
         }
     }
-    
-    let start_value_tokens: Vec<proc_macro2::TokenStream> = start_value_strings
-        .iter()
-        .map(|s| s.parse().expect("Failed to parse start value"))
-        .collect();
+
+    let instantiate_code = catch_panic(
+        quote! {
+            // The box is needed to avoid the model to be dropped when it goes out of scope.
+            let mut fmu_instance = Box::new(
+                FmuInstance::new(#structure_name::default())
+            );
+
+            let instance = &mut fmu_instance.model;
+            
+            // Add custom start values here
+            #(
+                instance.#fields_with_start_value = #start_value_tokens;
+            )*
+            
+            // Add the FMU info field if present
+            #fmu_info_code
+
+            Box::into_raw(fmu_instance) as *mut ffi::c_void
+        },
+        quote! { ptr::null_mut() }
+    );
     
     quote! {
         #function_signature {
             unsafe {
-                let instance_name: String = ffi::CStr::from_ptr(instance_name).to_string_lossy().into_owned();
+                let instance_name: String = if instance_name.is_null() {
+                    String::new()
+                } else {
+                    ffi::CStr::from_ptr(instance_name).to_string_lossy().into_owned()
+                };
                 
-                // The box is needed to avoid the model to be dropped when it goes out of scope.
-                let mut instance = Box::new(
-                    #structure_name::default()
-                );
-                
-                // Add custom start values here
-                #(
-                    instance.#fields_with_start_value = #start_value_tokens;
-                )*
-                
-                // Add the FMU info field if present
-                #fmu_info_code
-
-                let ptr = Box::into_raw(instance) as *mut _;
-
-                ptr as *mut ffi::c_void
+                #instantiate_code
             }
         }
     }
@@ -189,6 +203,15 @@ fn impl_exit_initialization_mode(
 
     let instance_tokens = get_instance(structure_name);
 
+    let exit_code = catch_panic(
+        quote! {
+            instance.exit_initialization_mode();
+
+            FmiStatus::Ok
+        },
+        quote! { FmiStatus::Error }
+    );
+
     quote! {
         #[no_mangle]
         #[allow(non_snake_case)]
@@ -196,10 +219,8 @@ fn impl_exit_initialization_mode(
             unsafe {
                 #instance_tokens;
 
-                instance.exit_initialization_mode();
+                #exit_code
             }
-
-            FmiStatus::Ok
         }
     }
 }
@@ -212,16 +233,12 @@ pub fn impl_free_instance(fmi_version: FmiVersion, structure_name: &syn::Ident) 
         FmiVersion::Fmi3 => quote! { fmi3FreeInstance },
     };
 
-    let instance_tokens = get_instance(structure_name);
-
     quote! {
         #[no_mangle]
         #[allow(non_snake_case)]
         pub unsafe extern "C" fn #function_name(instance_ptr: *mut ffi::c_void) {
             if !instance_ptr.is_null() {
-                #instance_tokens;
-
-                let _box = Box::from_raw(instance);
+                let _box = Box::from_raw(instance_ptr as *mut FmuInstance<#structure_name>);
                 // _box is dropped here and memory is deallocated
             }
         }
@@ -255,6 +272,21 @@ pub fn impl_reset(
         quote! {}
     };
 
+    let reset_code = catch_panic(
+        quote! {
+            #fmu_info_clone_tokens;
+
+            let new_structure = #structure_name::default();
+
+            *instance = new_structure;
+
+            #fmu_info_set_tokens;
+
+            FmiStatus::Ok
+        },
+        quote! { FmiStatus::Error }
+    );
+
     quote! {
         #[no_mangle]
         #[allow(non_snake_case)]
@@ -265,15 +297,7 @@ pub fn impl_reset(
 
             #instance_tokens;
 
-            #fmu_info_clone_tokens;
-
-            let new_structure = #structure_name::default();
-
-            *instance = new_structure;
-
-            #fmu_info_set_tokens;
-
-            FmiStatus::Ok
+            #reset_code
         }
     }
 }

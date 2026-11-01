@@ -4,6 +4,8 @@
 //! what type of variable it is. The type is both the data type and causality, i.e., input, output,
 //! or parameter.
 
+use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
 use syn;
 
 use crate::fmi_version::FmiVersion;
@@ -51,7 +53,7 @@ pub struct FieldInformation {
     /// The value reference of the field, used to uniquely identify the field in the setters,
     /// getters, and the model description
     pub value_reference: usize,
-    /// The default value
+    /// The start value, as written by the user in the `start_value` attribute
     pub start_value_string: Option<String>,
 }
 
@@ -158,7 +160,9 @@ impl FieldInformation {
         None
     }
     
-    /// Check for default function in the attributes and return it as 
+    /// Checks for a start value in the attributes and returns it as a string. The start value can
+    /// either be given as a string, e.g., `start_value = "1.0"`, or as a literal, e.g., 
+    /// `start_value = 1.0`, `start_value = -2` or `start_value = true`.
     pub fn check_for_start_value_string(attributes: &[syn::Attribute]) -> Option<String> {
         for attr in attributes.iter() {
             // Check that the attribute is in the right group
@@ -166,33 +170,65 @@ impl FieldInformation {
                 continue;
             }
         
-            match &attr.meta {
-                syn::Meta::List(meta_list) => {
-                    if let Ok(meta_name_value) = meta_list.parse_args::<syn::MetaNameValue>() {
-                        // Check if the attribute type is the right one
-                        if !meta_name_value.path.is_ident("start_value") {
-                            continue
-                        }
-                        
-                        // Extract the function name
-                        match &meta_name_value.value {
-                            syn::Expr::Lit(expr_lit) => {
-                                match &expr_lit.lit {
-                                    syn::Lit::Str(string_value) => {
-                                        return Some(string_value.value());
-                                    },
-                                    _ => {}
-                                }
-                            },
-                            _ => {}
-                        }   
+            if let syn::Meta::List(meta_list) = &attr.meta {
+                if let Ok(meta_name_value) = meta_list.parse_args::<syn::MetaNameValue>() {
+                    // Check if the attribute type is the right one
+                    if !meta_name_value.path.is_ident("start_value") {
+                        continue
                     }
-                },
-                _ => {}
+                    
+                    match Self::start_value_string_from_expression(&meta_name_value.value) {
+                        Some(start_value_string) => return Some(start_value_string),
+                        None => panic!(
+                            "The start_value must be a string, number, or boolean literal"
+                        ),
+                    }
+                }
             }
         }
             
         None
+    }
+
+    /// Converts the expression in a start value attribute to a string
+    fn start_value_string_from_expression(expression: &syn::Expr) -> Option<String> {
+        match expression {
+            syn::Expr::Lit(expr_lit) => {
+                match &expr_lit.lit {
+                    syn::Lit::Str(value) => Some(value.value()),
+                    syn::Lit::Float(value) => Some(value.base10_digits().to_string()),
+                    syn::Lit::Int(value) => Some(value.base10_digits().to_string()),
+                    syn::Lit::Bool(value) => Some(value.value.to_string()),
+                    _ => None,
+                }
+            },
+            // Negative numbers are parsed as a unary expression
+            syn::Expr::Unary(expr_unary) => {
+                if let syn::UnOp::Neg(_) = expr_unary.op {
+                    Self::start_value_string_from_expression(&expr_unary.expr)
+                        .map(|value| format!("-{}", value))
+                } else {
+                    None
+                }
+            },
+            _ => None,
+        }
+    }
+
+    /// Returns the tokens needed to set the start value on the field in the generated code, if a
+    /// start value is specified.
+    pub fn start_value_tokens(&self) -> Option<TokenStream2> {
+        let start_value_string = self.start_value_string.as_ref()?;
+
+        if self.field_type == "String" {
+            Some(quote! { String::from(#start_value_string) })
+        } else {
+            let tokens: TokenStream2 = start_value_string.parse().unwrap_or_else(|_| panic!(
+                "Failed to parse start value for field {}: {}", self.name, start_value_string
+            ));
+
+            Some(tokens)
+        }
     }
 
     /// Filters the fields based on the data type. Used to get all the fields of a certain type in
@@ -241,20 +277,16 @@ impl FieldInformation {
                     self.variability_string(),
                 );
 
-                let start_value_name = match self.field_type.to_string().as_str() {
-                    "f64" => "Real".to_string(),
-                    "bool" => "Boolean".to_string(),
-                    "i32" => "Real".to_string(),
-                    "String" => "String".to_string(),
-                    _ => unimplemented!("A start value for this type is not implemented: {}", self.field_type.to_string()),
-                };
+                let start_value_name = FieldInformation::get_fmi_type_name(
+                    fmi_version, &self.field_type
+                );
 
                 let body = match self.causality {
                     Causality::Parameter | Causality::Input => {
                         format!(
                             "        <{} start=\"{}\"/>\n",
                             start_value_name,
-                            self.get_start_value_string(),
+                            escape_xml(&self.get_start_value_string()),
                         )
                     },
                     Causality::Output => {
@@ -275,10 +307,18 @@ impl FieldInformation {
                 );
 
                 let end = match self.causality {
+                    // String start values are given as a child element in FMI 3
+                    Causality::Parameter | Causality::Input if self.field_type == "String" => {
+                        format!(
+                            ">\n        <Start value=\"{}\"/>\n{}",
+                            escape_xml(&self.get_start_value_string()),
+                            tail,
+                        )
+                    },
                     Causality::Parameter | Causality::Input => {
                         format!(
                             " start=\"{}\"/>\n",
-                            self.get_start_value_string(),
+                            escape_xml(&self.get_start_value_string()),
                         )
                     },
                     Causality::Output => {
@@ -354,9 +394,9 @@ impl FieldInformation {
             start_value_string.clone()
         } else {
             match self.field_type.to_string().as_str() {
-                "f64" => "0.0".to_string(),
+                "f64" | "f32" => "0.0".to_string(),
+                "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" => "0".to_string(),
                 "bool" => "false".to_string(),
-                "i32" => "0".to_string(),
                 "String" => "".to_string(),
                 _ => unimplemented!(
                     "A default start value for this type is not implemented: {}", 
@@ -367,4 +407,14 @@ impl FieldInformation {
         
         
     }
+}
+
+/// Escapes characters that are not allowed in XML attribute values
+fn escape_xml(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
