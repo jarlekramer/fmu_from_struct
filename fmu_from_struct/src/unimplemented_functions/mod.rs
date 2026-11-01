@@ -6,8 +6,10 @@
 //! the model exchange functions, but it is impossible to load an fmu in fmpy without them.
 //! 
 //! This module therefore implements dummy versions for missing functions, so that the fmu can be 
-//! loaded. IMPORTANT: as none of the functions actually do anything, they will not work as intended 
-//! for cases where they are needed.  
+//! loaded. IMPORTANT: none of the functions actually do anything, so they will not work as intended
+//! for cases where they are needed. Most of them return an error. The exceptions are functions that
+//! importers may call during a normal co-simulation, where doing nothing is valid behavior:
+//! `SetupExperiment` (FMI 2), `Terminate` and `SetDebugLogging`, which return OK.
 
 
 /// Dummy implementations for fmi2 functions

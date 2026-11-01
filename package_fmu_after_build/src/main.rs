@@ -46,6 +46,10 @@ fn get_bin_folder_path(fmi_version: i32, os: &OperatingSystem) -> Result<PathBuf
 }
 
 fn main() -> Result<(), PackageFmuError> {
+    eprintln!(
+        "warning: package_fmu_after_build is deprecated, and only works with fmu_from_struct         0.2.x and earlier. Use the cargo subcommand instead:         'cargo install cargo-fmu-from-struct', then 'cargo fmu-from-struct'"
+    );
+
     let args: Vec<String> = env::args().collect();
     let release = args.contains(&String::from("--release"));
 

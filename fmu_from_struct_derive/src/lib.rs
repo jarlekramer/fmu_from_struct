@@ -34,12 +34,15 @@ pub fn fmu_from_struct_derive(input: TokenStream) -> TokenStream {
 
     let fmu_info_field_name = fmu_info::search_for_fmu_info_field_name(&input);
 
-    // Write the model description to file
-    let _write_res = model_description::generate_model_description(
-        fmi_version, 
-        &name.to_string(), 
+    // Generate the model description. It is written to file, so that it can be inspected, and
+    // embedded in the compiled library, so that it can be packaged together with the library.
+    let model_description = model_description::generate_model_description(
+        fmi_version,
+        &name.to_string(),
         &fields
     );
+
+    let _write_res = model_description::write_model_description(&model_description);
 
     // Generate the code for the functional mockup interface
     let version_tokens = fmi_version.impl_fmi_version();
@@ -56,6 +59,9 @@ pub fn fmu_from_struct_derive(input: TokenStream) -> TokenStream {
     let do_step_tokens = do_step::impl_do_step(fmi_version, name);
     let state_tokens   = state_management::impl_state_managment(fmi_version, name);
     let free_tokens    = model_management::impl_free_instance(fmi_version, name);
+    let embedded_model_description_tokens = model_description::impl_embedded_model_description(
+        &model_description
+    );
 
     quote! {
         #version_tokens
@@ -65,5 +71,6 @@ pub fn fmu_from_struct_derive(input: TokenStream) -> TokenStream {
         #do_step_tokens
         #state_tokens
         #free_tokens
+        #embedded_model_description_tokens
     }.into()
 }

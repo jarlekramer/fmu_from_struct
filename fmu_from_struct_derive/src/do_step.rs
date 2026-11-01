@@ -6,7 +6,7 @@ use quote::quote;
 use syn;
 
 use crate::fmi_version::FmiVersion;
-use crate::model_management::get_instance;
+use crate::model_management::{get_instance, catch_panic};
 
 pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> TokenStream2 {
     let function_signature = match fmi_version {
@@ -17,7 +17,7 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
                 instance_ptr: *mut ffi::c_void,
                 current_communication_point: f64,
                 communication_step_size: f64,
-                _no_set_fmu_state_prior_to_current_point: bool,
+                _no_set_fmu_state_prior_to_current_point: i32,
             ) -> FmiStatus
         },
         FmiVersion::Fmi3 => quote! {
@@ -38,17 +38,23 @@ pub fn impl_do_step(fmi_version: FmiVersion, structure_name: &syn::Ident) -> Tok
 
     let instance_tokens = get_instance(structure_name);
 
+    let do_step_code = catch_panic(
+        quote! {
+            instance.do_step(current_communication_point, communication_step_size);
+
+            FmiStatus::Ok
+        },
+        quote! { FmiStatus::Error }
+    );
+
     let tokens = quote! {
         #function_signature {
             unsafe {
                 #instance_tokens;
 
-                instance.do_step(current_communication_point, communication_step_size);
+                #do_step_code
             }
-            
-            FmiStatus::Ok
         }
-    
     };
 
     tokens

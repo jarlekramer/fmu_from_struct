@@ -1,0 +1,17 @@
+[package]
+name = "cargo-fmu-from-struct"
+version = "0.1.0"
+authors = ["Jarle Kramer <jarle.kramer@gmail.com>"]
+description = "Cargo subcommand that builds a crate using the fmu_from_struct macro and packages it as an FMU"
+homepage = "https://github.com/jarlekramer/fmu_from_struct"
+readme = "README.md"
+repository = "https://github.com/jarlekramer/fmu_from_struct"
+license = "MIT"
+edition = "2021"
+keywords = ["fmi", "fmu", "cargo-subcommand", "co-simulation"]
+categories = ["development-tools::cargo-plugins", "simulation"]
+
+[dependencies]
+cargo_metadata = "0.23.1"
+xmltree = "0.12.0"
+zip = "9.2.1"
